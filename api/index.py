@@ -1,90 +1,10 @@
-"""
-GiftingGenie API - Vercel Serverless Function
-"""
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, Response
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, List, Any
-from urllib.parse import quote_plus
-from mangum import Mangum
+from http.server import BaseHTTPRequestHandler
+import json
 import random
-
-app = FastAPI(
-    title="GiftingGenie API",
-    description="Expert Indian Personal Shopper & Gifting Concierge",
-    version="1.0.0"
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+from urllib.parse import quote_plus, parse_qs, urlparse
 
 
-class GiftRequest(BaseModel):
-    relationship: str = Field(..., description="Relationship type")
-    occasion: str = Field(..., description="Occasion")
-    age_group: Optional[str] = Field("Adult", description="Age group")
-    vibe: Optional[str] = Field("Traditional", description="Gift vibe/style")
-    budget: int = Field(..., description="Budget in INR", ge=100, le=1000000)
-
-
-RELATIONSHIP_CONTEXT = {
-    "saali": {"formality": "casual", "closeness": "family"},
-    "boss": {"formality": "formal", "closeness": "professional"},
-    "mother": {"formality": "casual", "closeness": "immediate_family"},
-    "father": {"formality": "casual", "closeness": "immediate_family"},
-    "wife": {"formality": "casual", "closeness": "immediate_family"},
-    "husband": {"formality": "casual", "closeness": "immediate_family"},
-    "brother": {"formality": "casual", "closeness": "immediate_family"},
-    "sister": {"formality": "casual", "closeness": "immediate_family"},
-    "son": {"formality": "casual", "closeness": "immediate_family"},
-    "daughter": {"formality": "casual", "closeness": "immediate_family"},
-    "uncle": {"formality": "casual", "closeness": "extended_family"},
-    "aunt": {"formality": "casual", "closeness": "extended_family"},
-    "cousin": {"formality": "casual", "closeness": "extended_family"},
-    "nephew": {"formality": "casual", "closeness": "extended_family"},
-    "niece": {"formality": "casual", "closeness": "extended_family"},
-    "friend": {"formality": "casual", "closeness": "social"},
-    "colleague": {"formality": "semi-formal", "closeness": "professional"},
-    "boyfriend": {"formality": "casual", "closeness": "romantic"},
-    "girlfriend": {"formality": "casual", "closeness": "romantic"},
-    "grandparent": {"formality": "casual", "closeness": "immediate_family"},
-    "grandchild": {"formality": "casual", "closeness": "immediate_family"},
-}
-
-OCCASION_CONTEXT = {
-    "diwali": {"type": "festival", "significance": "very_high"},
-    "holi": {"type": "festival", "significance": "high"},
-    "raksha bandhan": {"type": "festival", "significance": "high"},
-    "durga puja": {"type": "festival", "significance": "very_high"},
-    "ganesh chaturthi": {"type": "festival", "significance": "very_high"},
-    "navratri": {"type": "festival", "significance": "very_high"},
-    "janmashtami": {"type": "festival", "significance": "high"},
-    "eid": {"type": "festival", "significance": "very_high"},
-    "christmas": {"type": "festival", "significance": "high"},
-    "pongal": {"type": "festival", "significance": "high"},
-    "onam": {"type": "festival", "significance": "high"},
-    "baisakhi": {"type": "festival", "significance": "high"},
-    "new year": {"type": "celebration", "significance": "high"},
-    "wedding": {"type": "milestone", "significance": "very_high"},
-    "anniversary": {"type": "milestone", "significance": "high"},
-    "birthday": {"type": "celebration", "significance": "medium"},
-    "graduation": {"type": "milestone", "significance": "high"},
-    "promotion": {"type": "milestone", "significance": "medium"},
-    "baby shower": {"type": "milestone", "significance": "high"},
-    "house warming": {"type": "milestone", "significance": "high"},
-    "retirement": {"type": "milestone", "significance": "high"},
-    "valentine's day": {"type": "celebration", "significance": "medium"},
-    "karva chauth": {"type": "festival", "significance": "high"},
-    "mother's day": {"type": "celebration", "significance": "medium"},
-    "father's day": {"type": "celebration", "significance": "medium"},
-}
-
+# Gift data
 GIFT_DATABASE = {
     "traditional": ["Silver Pooja Items", "Brass Diya Set", "Traditional Silk Saree", "Kurta Pajama Set", "Handcrafted Jewelry", "Silver Coins"],
     "modern": ["Smart Watch", "Bluetooth Speaker", "Power Bank", "Wireless Earbuds", "Coffee Maker", "Air Purifier"],
@@ -96,23 +16,34 @@ GIFT_DATABASE = {
     "home": ["Wall Clock", "Decorative Showpiece", "Table Lamp", "Bedsheet Set", "Dinner Set"],
 }
 
+RELATIONSHIPS = {
+    "mother": "immediate_family", "father": "immediate_family", "brother": "immediate_family",
+    "sister": "immediate_family", "wife": "immediate_family", "husband": "immediate_family",
+    "boss": "professional", "colleague": "professional", "friend": "social",
+    "boyfriend": "romantic", "girlfriend": "romantic", "saali": "family"
+}
 
-def get_recommendations(relationship, occasion, age_group, vibe, budget):
-    rel_ctx = RELATIONSHIP_CONTEXT.get(relationship.lower(), {"formality": "casual", "closeness": "general"})
-    occ_ctx = OCCASION_CONTEXT.get(occasion.lower(), {"type": "celebration", "significance": "medium"})
+OCCASIONS = ["diwali", "holi", "raksha bandhan", "birthday", "wedding", "anniversary", "new year"]
 
-    categories = ["traditional", "modern", "personalized"]
-    if rel_ctx["closeness"] == "immediate_family":
+
+def get_recommendations(relationship, occasion, budget):
+    rel_type = RELATIONSHIPS.get(relationship.lower(), "general")
+
+    if rel_type == "immediate_family":
         categories = ["personalized", "luxury", "wellness"]
-    elif rel_ctx["closeness"] == "professional":
+    elif rel_type == "professional":
         categories = ["modern", "luxury"]
-    elif rel_ctx["closeness"] == "romantic":
+    elif rel_type == "romantic":
         categories = ["romantic", "personalized", "luxury"]
-    if occ_ctx["type"] == "festival":
+    else:
+        categories = ["traditional", "modern", "personalized"]
+
+    if occasion.lower() in ["diwali", "holi", "raksha bandhan"]:
         categories.insert(0, "festive")
 
     recommendations = []
     used = set()
+
     for i in range(5):
         cat = categories[i % len(categories)]
         items = [x for x in GIFT_DATABASE.get(cat, GIFT_DATABASE["modern"]) if x not in used]
@@ -146,11 +77,7 @@ HTML_PAGE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>GiftingGenie</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; padding: 20px; }
@@ -161,11 +88,7 @@ HTML_PAGE = """<!DOCTYPE html>
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
         .form-group select, .form-group input { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; }
-        .form-group select:focus, .form-group input:focus { outline: none; border-color: #667eea; }
         .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: 600; cursor: pointer; }
-        .btn:hover { opacity: 0.9; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .results { display: none; margin-top: 30px; }
         .gift-card { background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
         .gift-title { font-size: 1.2rem; font-weight: 600; color: #333; margin-bottom: 8px; }
         .gift-price { font-size: 1.5rem; color: #667eea; font-weight: 700; margin-bottom: 10px; }
@@ -178,6 +101,7 @@ HTML_PAGE = """<!DOCTYPE html>
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .back-btn { display: block; margin: 20px auto; padding: 10px 30px; background: white; color: #667eea; border: 2px solid #667eea; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        #results { display: none; }
     </style>
 </head>
 <body>
@@ -222,7 +146,7 @@ HTML_PAGE = """<!DOCTYPE html>
                         <label>Budget (INR)</label>
                         <input type="number" id="budget" placeholder="2000" min="100" max="1000000" required>
                     </div>
-                    <button type="submit" class="btn" id="submitBtn">Find Perfect Gifts</button>
+                    <button type="submit" class="btn">Find Perfect Gifts</button>
                 </form>
                 <div class="error" id="error"></div>
             </div>
@@ -230,7 +154,7 @@ HTML_PAGE = """<!DOCTYPE html>
                 <div class="spinner"></div>
                 <p>Finding perfect gifts...</p>
             </div>
-            <div class="results" id="results">
+            <div id="results">
                 <div id="giftsContainer"></div>
                 <button class="back-btn" onclick="reset()">Find More Gifts</button>
             </div>
@@ -242,22 +166,18 @@ HTML_PAGE = """<!DOCTYPE html>
             const data = {
                 relationship: document.getElementById('relationship').value,
                 occasion: document.getElementById('occasion').value,
-                age_group: 'Adult',
-                vibe: 'Traditional',
                 budget: parseInt(document.getElementById('budget').value)
             };
             document.getElementById('formSection').style.display = 'none';
             document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
             try {
-                const res = await fetch('/api/v1/recommend', {
+                const res = await fetch('/api/recommend', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(data)
                 });
-                if (!res.ok) throw new Error('Request failed');
-                const result = await res.json();
-                showResults(result);
+                if (!res.ok) throw new Error('Failed');
+                showResults(await res.json());
             } catch (err) {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('formSection').style.display = 'block';
@@ -268,8 +188,7 @@ HTML_PAGE = """<!DOCTYPE html>
         function showResults(data) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('results').style.display = 'block';
-            const container = document.getElementById('giftsContainer');
-            container.innerHTML = data.recommendations.map(g =>
+            document.getElementById('giftsContainer').innerHTML = data.recommendations.map(g =>
                 '<div class="gift-card"><div class="gift-title">' + g.title + '</div><div class="gift-price">' + g.approx_price_inr + '</div><div class="gift-links"><a href="' + g.purchase_links.amazon_in + '" target="_blank" class="amazon">Amazon</a><a href="' + g.purchase_links.flipkart + '" target="_blank" class="flipkart">Flipkart</a></div></div>'
             ).join('');
         }
@@ -283,54 +202,44 @@ HTML_PAGE = """<!DOCTYPE html>
 </html>"""
 
 
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    return HTMLResponse(
-        content=HTML_PAGE,
-        headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache",
-            "Expires": "0"
-        }
-    )
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/api/health':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "healthy"}).encode())
+        else:
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html')
+            self.send_header('Cache-Control', 'no-cache')
+            self.end_headers()
+            self.wfile.write(HTML_PAGE.encode())
 
+    def do_POST(self):
+        if self.path == '/api/recommend':
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length)
+            data = json.loads(body)
 
-@app.get("/health")
-async def health():
-    return {"status": "healthy"}
+            result = get_recommendations(
+                data.get('relationship', 'Friend'),
+                data.get('occasion', 'Birthday'),
+                data.get('budget', 2000)
+            )
 
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(result).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
 
-@app.get("/favicon.ico")
-async def favicon():
-    return Response(
-        content='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎁</text></svg>',
-        media_type="image/svg+xml"
-    )
-
-
-@app.post("/api/v1/recommend")
-async def recommend(request: GiftRequest):
-    try:
-        return get_recommendations(
-            request.relationship,
-            request.occasion,
-            request.age_group or "Adult",
-            request.vibe or "Traditional",
-            request.budget
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/api/v1/occasions")
-async def occasions():
-    return {"occasions": list(OCCASION_CONTEXT.keys())}
-
-
-@app.get("/api/v1/relationships")
-async def relationships():
-    return {"relationships": list(RELATIONSHIP_CONTEXT.keys())}
-
-
-# Vercel handler
-handler = Mangum(app, lifespan="off")
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
