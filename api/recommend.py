@@ -17,6 +17,30 @@ GIFT_DATABASE = {
     "kids": ["Educational Toys", "Building Blocks Set", "Art and Craft Kit", "Remote Control Car", "Story Books Set"],
 }
 
+GIFT_ICONS = {
+    "Silver Pooja Items": "🪔", "Brass Diya Set": "🪔", "Traditional Silk Saree": "👗",
+    "Kurta Pajama Set": "👔", "Handcrafted Jewelry": "💍", "Silver Coins": "🪙",
+    "Copper Water Bottle": "🍶", "Traditional Sweet Box": "🍬", "Smart Watch": "⌚",
+    "Bluetooth Speaker": "🔊", "Power Bank": "🔋", "Wireless Earbuds": "🎧",
+    "Coffee Maker": "☕", "Air Purifier": "💨", "Electric Kettle": "🫖", "Grooming Kit": "💈",
+    "Customized Photo Frame": "🖼️", "Engraved Pen Set": "🖊️", "Personalized Cushion": "🛋️",
+    "Photo Coffee Mug": "☕", "Custom Name Plate": "🏷️", "Customized Diary": "📔",
+    "Designer Perfume": "🧴", "Premium Watch": "⌚", "Leather Wallet": "👛",
+    "Designer Sunglasses": "🕶️", "Branded Handbag": "👜", "Premium Tea Gift Set": "🍵",
+    "Luxury Chocolate Box": "🍫", "Yoga Mat": "🧘", "Essential Oil Diffuser": "🌸",
+    "Spa Gift Hamper": "🧖", "Fitness Tracker": "📱", "Organic Skincare Set": "🧴",
+    "Meditation Kit": "🧘", "Decorative Diya Set": "🪔", "Rangoli Kit": "🎨",
+    "Festival Sweet Hamper": "🍬", "Pooja Thali Set": "🪔", "Festive Dry Fruit Box": "🥜",
+    "Decorative Toran": "🎊", "Couple Watches": "⌚", "Heart-shaped Jewelry": "💝",
+    "Perfume Gift Set": "🧴", "Love Letter Kit": "💌", "Couple Keychains": "🔑",
+    "Wall Clock": "🕐", "Decorative Showpiece": "🏺", "Table Lamp": "💡",
+    "Bedsheet Set": "🛏️", "Dinner Set": "🍽️", "Indoor Plant with Planter": "🪴",
+    "Tablet": "📱", "Kindle E-reader": "📚", "Smart Home Device": "🏠",
+    "Gaming Accessories": "🎮", "Portable Projector": "📽️", "Educational Toys": "🧩",
+    "Building Blocks Set": "🧱", "Art and Craft Kit": "🎨", "Remote Control Car": "🚗",
+    "Story Books Set": "📚"
+}
+
 RELATIONSHIPS = {
     "mother": "immediate_family", "father": "immediate_family", "brother": "immediate_family",
     "sister": "immediate_family", "wife": "immediate_family", "husband": "immediate_family",
@@ -100,14 +124,22 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
                 f"Thoughtful present that strengthens your bond"
             ]
 
+            icon = GIFT_ICONS.get(item, "🎁")
+            encoded_item = quote_plus(item)
+
             recommendations.append({
                 "id": i + 1,
                 "title": item,
+                "icon": icon,
                 "description": descriptions[i % len(descriptions)],
                 "approx_price_inr": f"Rs.{price:,}",
                 "purchase_links": {
-                    "amazon_in": f"https://www.amazon.in/s?k={quote_plus(item)}",
-                    "flipkart": f"https://www.flipkart.com/search?q={quote_plus(item)}"
+                    "amazon": f"https://www.amazon.in/s?k={encoded_item}",
+                    "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
+                    "myntra": f"https://www.myntra.com/{encoded_item}",
+                    "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
+                    "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
+                    "meesho": f"https://www.meesho.com/search?q={encoded_item}"
                 }
             })
 
