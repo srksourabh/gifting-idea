@@ -2,13 +2,19 @@
 Vercel serverless function entry point
 """
 import sys
-import os
+from pathlib import Path
 
-# Add parent directory to path to import app
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+# Add parent directory to path
+parent_dir = str(Path(__file__).parent.parent)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
+# Import the FastAPI app
 from app import app
 from mangum import Mangum
 
-# Wrap FastAPI app with Mangum for serverless compatibility
+# Create the Mangum handler for AWS Lambda/Vercel
 handler = Mangum(app, lifespan="off")
+
+# Export app for direct access if needed
+__all__ = ["handler", "app"]
