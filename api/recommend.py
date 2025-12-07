@@ -15,6 +15,34 @@ GIFT_DATABASE = {
     "home": ["Wall Clock", "Decorative Showpiece", "Table Lamp", "Bedsheet Set", "Dinner Set", "Indoor Plant with Planter"],
     "tech": ["Tablet", "Kindle E-reader", "Smart Home Device", "Gaming Accessories", "Portable Projector"],
     "kids": ["Educational Toys", "Building Blocks Set", "Art and Craft Kit", "Remote Control Car", "Story Books Set"],
+    "kids_boys": ["Remote Control Car", "Building Blocks Set", "Gaming Accessories", "Story Books Set", "Cricket Kit", "Football"],
+    "kids_girls": ["Art and Craft Kit", "Doll House Set", "Story Books Set", "Educational Toys", "Dance Costume Set", "Jewelry Making Kit"],
+}
+
+# Gift type classification (formal, funky, romantic, practical, traditional, luxury)
+GIFT_TYPE_TAGS = {
+    "Silver Pooja Items": "Traditional", "Brass Diya Set": "Traditional", "Traditional Silk Saree": "Traditional",
+    "Kurta Pajama Set": "Formal", "Handcrafted Jewelry": "Traditional", "Silver Coins": "Formal",
+    "Copper Water Bottle": "Practical", "Traditional Sweet Box": "Traditional", "Smart Watch": "Practical",
+    "Bluetooth Speaker": "Funky", "Power Bank": "Practical", "Wireless Earbuds": "Practical",
+    "Coffee Maker": "Practical", "Air Purifier": "Practical", "Electric Kettle": "Practical", "Grooming Kit": "Practical",
+    "Customized Photo Frame": "Romantic", "Engraved Pen Set": "Formal", "Personalized Cushion": "Funky",
+    "Photo Coffee Mug": "Funky", "Custom Name Plate": "Formal", "Customized Diary": "Formal",
+    "Designer Perfume": "Luxury", "Premium Watch": "Luxury", "Leather Wallet": "Formal",
+    "Designer Sunglasses": "Luxury", "Branded Handbag": "Luxury", "Premium Tea Gift Set": "Formal",
+    "Luxury Chocolate Box": "Luxury", "Yoga Mat": "Practical", "Essential Oil Diffuser": "Practical",
+    "Spa Gift Hamper": "Luxury", "Fitness Tracker": "Practical", "Organic Skincare Set": "Luxury",
+    "Meditation Kit": "Practical", "Decorative Diya Set": "Traditional", "Rangoli Kit": "Traditional",
+    "Festival Sweet Hamper": "Traditional", "Pooja Thali Set": "Traditional", "Festive Dry Fruit Box": "Formal",
+    "Decorative Toran": "Traditional", "Couple Watches": "Romantic", "Heart-shaped Jewelry": "Romantic",
+    "Perfume Gift Set": "Romantic", "Love Letter Kit": "Romantic", "Couple Keychains": "Romantic",
+    "Wall Clock": "Practical", "Decorative Showpiece": "Formal", "Table Lamp": "Practical",
+    "Bedsheet Set": "Practical", "Dinner Set": "Formal", "Indoor Plant with Planter": "Practical",
+    "Tablet": "Practical", "Kindle E-reader": "Practical", "Smart Home Device": "Practical",
+    "Gaming Accessories": "Funky", "Portable Projector": "Practical", "Educational Toys": "Practical",
+    "Building Blocks Set": "Funky", "Art and Craft Kit": "Funky", "Remote Control Car": "Funky",
+    "Story Books Set": "Practical", "Cricket Kit": "Funky", "Football": "Funky",
+    "Doll House Set": "Funky", "Dance Costume Set": "Funky", "Jewelry Making Kit": "Funky"
 }
 
 GIFT_ICONS = {
@@ -38,7 +66,8 @@ GIFT_ICONS = {
     "Tablet": "📱", "Kindle E-reader": "📚", "Smart Home Device": "🏠",
     "Gaming Accessories": "🎮", "Portable Projector": "📽️", "Educational Toys": "🧩",
     "Building Blocks Set": "🧱", "Art and Craft Kit": "🎨", "Remote Control Car": "🚗",
-    "Story Books Set": "📚"
+    "Story Books Set": "📚", "Cricket Kit": "🏏", "Football": "⚽",
+    "Doll House Set": "🏠", "Dance Costume Set": "💃", "Jewelry Making Kit": "💎"
 }
 
 RELATIONSHIPS = {
@@ -73,7 +102,10 @@ PRO_TIPS = {
 }
 
 
-def get_recommendations(relationship, occasion, age_group, vibe, budget):
+def get_recommendations(relationship, occasion, age_group, vibe, budget, gender="", notes="", gift_types=None):
+    if gift_types is None:
+        gift_types = ["Formal", "Funky", "Romantic", "Practical", "Traditional", "Luxury"]
+
     rel_type = RELATIONSHIPS.get(relationship.lower(), "general")
     occ_type = OCCASIONS.get(occasion.lower(), "celebration")
 
@@ -99,19 +131,29 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
     if occ_type == "festival":
         categories.insert(0, "festive")
 
+    # Handle children with gender-specific gifts
     if age_group and age_group.lower() == "child":
-        categories = ["kids", "personalized"] + categories
+        if gender and gender.lower() == "male":
+            categories = ["kids_boys", "kids", "personalized"] + categories
+        elif gender and gender.lower() == "female":
+            categories = ["kids_girls", "kids", "personalized"] + categories
+        else:
+            categories = ["kids", "personalized"] + categories
 
     recommendations = []
     used = set()
+    attempt = 0
 
-    for i in range(10):
-        cat = categories[i % len(categories)]
-        items = [x for x in GIFT_DATABASE.get(cat, GIFT_DATABASE["modern"]) if x not in used]
+    while len(recommendations) < 10 and attempt < 50:
+        cat = categories[attempt % len(categories)]
+        # Filter items by selected gift types
+        items = [x for x in GIFT_DATABASE.get(cat, GIFT_DATABASE["modern"])
+                 if x not in used and GIFT_TYPE_TAGS.get(x, "Practical") in gift_types]
         if not items:
-            items = [x for v in GIFT_DATABASE.values() for x in v if x not in used]
+            items = [x for v in GIFT_DATABASE.values() for x in v
+                     if x not in used and GIFT_TYPE_TAGS.get(x, "Practical") in gift_types]
         if items:
-            random.seed(hash(f"{relationship}{occasion}{vibe}{i}"))
+            random.seed(hash(f"{relationship}{occasion}{vibe}{gender}{attempt}"))
             item = random.choice(items)
             used.add(item)
             price = round(budget * random.uniform(0.7, 1.1) / 50) * 50
@@ -145,7 +187,8 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
                 why_reasons.append(f"Ideal for celebrating {occasion}")
 
             if age_group and age_group.lower() == "child":
-                why_reasons.append("Age-appropriate and engaging for children")
+                gender_text = " boy" if gender and gender.lower() == "male" else (" girl" if gender and gender.lower() == "female" else "")
+                why_reasons.append(f"Age-appropriate and engaging for children{gender_text}")
             elif age_group and age_group.lower() == "senior":
                 why_reasons.append("Practical and valued by seniors")
             elif age_group and age_group.lower() == "teenager":
@@ -160,16 +203,22 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
             elif "wellness" in vibe_lower:
                 why_reasons.append("Promotes health and well-being")
 
+            # Add personalized note if provided
+            if notes and notes.strip():
+                why_reasons.append(f"Considering your note: {notes.strip()[:50]}")
+
             why_applicable = " • ".join(why_reasons[:3])
+            gift_type_tag = GIFT_TYPE_TAGS.get(item, "Practical")
 
             icon = GIFT_ICONS.get(item, "🎁")
             encoded_item = quote_plus(item)
 
             recommendations.append({
-                "id": i + 1,
+                "id": len(recommendations) + 1,
                 "title": item,
                 "icon": icon,
-                "description": descriptions[i % len(descriptions)],
+                "gift_type": gift_type_tag,
+                "description": descriptions[len(recommendations) % len(descriptions)],
                 "why_applicable": why_applicable,
                 "approx_price_inr": f"Rs.{price:,}",
                 "purchase_links": {
@@ -181,11 +230,16 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
                     "meesho": f"https://www.meesho.com/search?q={encoded_item}"
                 }
             })
+        attempt += 1
 
     pro_tip = PRO_TIPS.get(occasion.lower(), PRO_TIPS.get("professional" if rel_type == "professional" else "default", PRO_TIPS["default"]))
 
+    gender_text = f", {gender} gender" if gender else ""
+    notes_text = f", with special note: '{notes[:30]}...'" if notes and len(notes) > 30 else (f", with note: '{notes}'" if notes else "")
+    types_text = f", filtering by: {', '.join(gift_types)}" if len(gift_types) < 6 else ""
+
     return {
-        "thinking_trace": f"Analyzing gift for {relationship} on {occasion}. Considering {rel_type} relationship type, {occ_type} occasion, {age_group} age group, {vibe} style preference, and Rs.{budget:,} budget.",
+        "thinking_trace": f"Analyzing gift for {relationship} on {occasion}. Considering {rel_type} relationship type, {occ_type} occasion, {age_group} age group{gender_text}, {vibe} style preference, and Rs.{budget:,} budget{notes_text}{types_text}.",
         "recommendations": recommendations,
         "pro_tip": pro_tip
     }
@@ -202,7 +256,10 @@ class handler(BaseHTTPRequestHandler):
             data.get('occasion', 'Birthday'),
             data.get('age_group', 'Adult'),
             data.get('vibe', 'Traditional'),
-            data.get('budget', 2000)
+            data.get('budget', 2000),
+            data.get('gender', ''),
+            data.get('notes', ''),
+            data.get('gift_types', None)
         )
 
         self.send_response(200)
