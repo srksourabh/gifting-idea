@@ -106,7 +106,7 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
     recommendations = []
     used = set()
 
-    for i in range(5):
+    for i in range(10):
         cat = categories[i % len(categories)]
         items = [x for x in GIFT_DATABASE.get(cat, GIFT_DATABASE["modern"]) if x not in used]
         if not items:
@@ -125,6 +125,44 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
                 f"Thoughtful present that strengthens your bond"
             ]
 
+            # Generate personalized reason for this gift
+            why_reasons = []
+            if rel_type == "immediate_family":
+                why_reasons.append(f"Your {relationship} deserves something special that shows deep appreciation")
+            elif rel_type == "romantic":
+                why_reasons.append(f"Perfect for expressing love and affection to your {relationship}")
+            elif rel_type == "professional":
+                why_reasons.append(f"Maintains appropriate professional boundaries while showing respect")
+            else:
+                why_reasons.append(f"Thoughtful choice that strengthens your bond with your {relationship}")
+
+            if occ_type == "festival":
+                why_reasons.append(f"Aligns beautifully with the spirit and traditions of {occasion}")
+            elif occ_type == "milestone":
+                why_reasons.append(f"Commemorates this important {occasion} milestone meaningfully")
+            elif occ_type == "romantic":
+                why_reasons.append(f"Captures the romantic essence of {occasion}")
+            else:
+                why_reasons.append(f"Ideal for celebrating {occasion}")
+
+            if age_group and age_group.lower() == "child":
+                why_reasons.append("Age-appropriate and engaging for children")
+            elif age_group and age_group.lower() == "senior":
+                why_reasons.append("Practical and valued by seniors")
+            elif age_group and age_group.lower() == "teenager":
+                why_reasons.append("Trendy and appealing for teenagers")
+
+            if "traditional" in vibe_lower:
+                why_reasons.append("Honors traditional values and cultural heritage")
+            elif "tech" in vibe_lower:
+                why_reasons.append("Modern tech gift for the gadget enthusiast")
+            elif "luxury" in vibe_lower:
+                why_reasons.append("Premium quality that makes a lasting impression")
+            elif "wellness" in vibe_lower:
+                why_reasons.append("Promotes health and well-being")
+
+            why_applicable = " • ".join(why_reasons[:3])
+
             icon = GIFT_ICONS.get(item, "🎁")
             encoded_item = quote_plus(item)
 
@@ -133,6 +171,7 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
                 "title": item,
                 "icon": icon,
                 "description": descriptions[i % len(descriptions)],
+                "why_applicable": why_applicable,
                 "approx_price_inr": f"Rs.{price:,}",
                 "purchase_links": {
                     "amazon": f"https://www.amazon.in/s?k={encoded_item}",
@@ -195,6 +234,9 @@ HTML_PAGE = '''<!DOCTYPE html>
         .gift-number { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; width: 24px; height: 24px; border-radius: 50%; font-weight: 600; font-size: 0.75rem; margin-bottom: 5px; }
         .gift-title { font-size: 1.15rem; color: #333; font-weight: 600; line-height: 1.3; }
         .gift-description { color: #666; margin-bottom: 12px; line-height: 1.5; font-size: 0.9rem; }
+        .gift-why { background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #0d9488; }
+        .gift-why-label { font-weight: 600; color: #0d9488; font-size: 0.8rem; margin-bottom: 4px; }
+        .gift-why-text { color: #065f46; font-size: 0.85rem; line-height: 1.4; }
         .gift-price { font-size: 1.5rem; color: #0d9488; font-weight: 700; margin-bottom: 15px; }
         .purchase-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .purchase-btn { padding: 10px 8px; border-radius: 8px; text-decoration: none; text-align: center; font-weight: 600; transition: all 0.3s ease; font-size: 0.75rem; color: white; }
@@ -208,8 +250,11 @@ HTML_PAGE = '''<!DOCTYPE html>
         .pro-tip { background: linear-gradient(135deg, #fef3c7 0%, #d1fae5 100%); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
         .pro-tip h3 { color: #065f46; font-size: 1.1rem; margin-bottom: 8px; }
         .pro-tip p { color: #047857; line-height: 1.6; }
-        .back-btn { display: block; margin: 0 auto; padding: 12px 40px; background: white; color: #0d9488; border: 2px solid #0d9488; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; }
+        .button-group { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .back-btn { padding: 12px 40px; background: white; color: #0d9488; border: 2px solid #0d9488; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; }
         .back-btn:hover { background: #0d9488; color: white; }
+        .edit-btn { padding: 12px 40px; background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3); }
+        .edit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(13, 148, 136, 0.5); }
         .error { background: #fef2f2; color: #dc2626; padding: 15px; border-radius: 10px; margin-top: 15px; display: none; text-align: center; }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
@@ -350,7 +395,10 @@ HTML_PAGE = '''<!DOCTYPE html>
                     <h3>💡 Pro Tip</h3>
                     <p id="proTipText"></p>
                 </div>
-                <button class="back-btn" onclick="reset()">🔄 Find More Gifts</button>
+                <div class="button-group">
+                    <button class="edit-btn" onclick="editRequest()">✏️ Edit Request</button>
+                    <button class="back-btn" onclick="reset()">🔄 Start Over</button>
+                </div>
             </div>
         </div>
     </div>
@@ -397,6 +445,10 @@ HTML_PAGE = '''<!DOCTYPE html>
                         '</div>' +
                     '</div>' +
                     '<div class="gift-description">' + g.description + '</div>' +
+                    '<div class="gift-why">' +
+                        '<div class="gift-why-label">💡 Why this gift?</div>' +
+                        '<div class="gift-why-text">' + g.why_applicable + '</div>' +
+                    '</div>' +
                     '<div class="gift-price">' + g.approx_price_inr + '</div>' +
                     '<div class="purchase-links">' +
                         '<a href="' + g.purchase_links.amazon + '" target="_blank" class="purchase-btn amazon-btn">Amazon</a>' +
@@ -412,6 +464,11 @@ HTML_PAGE = '''<!DOCTYPE html>
         }
         function reset() {
             document.getElementById('giftForm').reset();
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('formSection').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function editRequest() {
             document.getElementById('results').style.display = 'none';
             document.getElementById('formSection').style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -105,7 +105,7 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
     recommendations = []
     used = set()
 
-    for i in range(5):
+    for i in range(10):
         cat = categories[i % len(categories)]
         items = [x for x in GIFT_DATABASE.get(cat, GIFT_DATABASE["modern"]) if x not in used]
         if not items:
@@ -124,6 +124,44 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
                 f"Thoughtful present that strengthens your bond"
             ]
 
+            # Generate personalized reason for this gift
+            why_reasons = []
+            if rel_type == "immediate_family":
+                why_reasons.append(f"Your {relationship} deserves something special that shows deep appreciation")
+            elif rel_type == "romantic":
+                why_reasons.append(f"Perfect for expressing love and affection to your {relationship}")
+            elif rel_type == "professional":
+                why_reasons.append(f"Maintains appropriate professional boundaries while showing respect")
+            else:
+                why_reasons.append(f"Thoughtful choice that strengthens your bond with your {relationship}")
+
+            if occ_type == "festival":
+                why_reasons.append(f"Aligns beautifully with the spirit and traditions of {occasion}")
+            elif occ_type == "milestone":
+                why_reasons.append(f"Commemorates this important {occasion} milestone meaningfully")
+            elif occ_type == "romantic":
+                why_reasons.append(f"Captures the romantic essence of {occasion}")
+            else:
+                why_reasons.append(f"Ideal for celebrating {occasion}")
+
+            if age_group and age_group.lower() == "child":
+                why_reasons.append("Age-appropriate and engaging for children")
+            elif age_group and age_group.lower() == "senior":
+                why_reasons.append("Practical and valued by seniors")
+            elif age_group and age_group.lower() == "teenager":
+                why_reasons.append("Trendy and appealing for teenagers")
+
+            if "traditional" in vibe_lower:
+                why_reasons.append("Honors traditional values and cultural heritage")
+            elif "tech" in vibe_lower:
+                why_reasons.append("Modern tech gift for the gadget enthusiast")
+            elif "luxury" in vibe_lower:
+                why_reasons.append("Premium quality that makes a lasting impression")
+            elif "wellness" in vibe_lower:
+                why_reasons.append("Promotes health and well-being")
+
+            why_applicable = " • ".join(why_reasons[:3])
+
             icon = GIFT_ICONS.get(item, "🎁")
             encoded_item = quote_plus(item)
 
@@ -132,6 +170,7 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
                 "title": item,
                 "icon": icon,
                 "description": descriptions[i % len(descriptions)],
+                "why_applicable": why_applicable,
                 "approx_price_inr": f"Rs.{price:,}",
                 "purchase_links": {
                     "amazon": f"https://www.amazon.in/s?k={encoded_item}",
