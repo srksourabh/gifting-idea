@@ -5,7 +5,7 @@ FastAPI backend for Indian personal shopper and gifting concierge
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 from typing import Optional
 from gifting_engine import GiftingEngine
@@ -79,6 +79,16 @@ async def root():
         "description": "Expert Indian Personal Shopper & Gifting Concierge",
         "web_ui": "Visit /static/index.html for the web interface"
     }
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    """Serve favicon to prevent 404 errors"""
+    # Return a simple SVG emoji favicon
+    svg_content = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <text y=".9em" font-size="90">🎁</text>
+    </svg>"""
+    return Response(content=svg_content, media_type="image/svg+xml")
 
 
 @app.get("/health")

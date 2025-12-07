@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GiftingGenie - Your Personal Gifting Concierge</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -458,20 +459,35 @@
                             <label for="relationship">👥 Relationship</label>
                             <select id="relationship" required>
                                 <option value="">Select Relationship</option>
-                                <option value="Mother">Mother</option>
-                                <option value="Father">Father</option>
-                                <option value="Brother">Brother</option>
-                                <option value="Sister">Sister</option>
-                                <option value="Wife">Wife</option>
-                                <option value="Husband">Husband</option>
-                                <option value="Son">Son</option>
-                                <option value="Daughter">Daughter</option>
-                                <option value="Saali">Saali (Sister-in-law)</option>
-                                <option value="Boss">Boss</option>
-                                <option value="Colleague">Colleague</option>
-                                <option value="Friend">Friend</option>
-                                <option value="Boyfriend">Boyfriend</option>
-                                <option value="Girlfriend">Girlfriend</option>
+                                <optgroup label="Immediate Family">
+                                    <option value="Mother">Mother</option>
+                                    <option value="Father">Father</option>
+                                    <option value="Brother">Brother</option>
+                                    <option value="Sister">Sister</option>
+                                    <option value="Wife">Wife</option>
+                                    <option value="Husband">Husband</option>
+                                    <option value="Son">Son</option>
+                                    <option value="Daughter">Daughter</option>
+                                    <option value="Grandparent">Grandparent</option>
+                                    <option value="Grandchild">Grandchild</option>
+                                </optgroup>
+                                <optgroup label="Extended Family">
+                                    <option value="Uncle">Uncle</option>
+                                    <option value="Aunt">Aunt</option>
+                                    <option value="Cousin">Cousin</option>
+                                    <option value="Nephew">Nephew</option>
+                                    <option value="Niece">Niece</option>
+                                    <option value="Saali">Saali (Sister-in-law)</option>
+                                </optgroup>
+                                <optgroup label="Professional">
+                                    <option value="Boss">Boss</option>
+                                    <option value="Colleague">Colleague</option>
+                                </optgroup>
+                                <optgroup label="Social & Romantic">
+                                    <option value="Friend">Friend</option>
+                                    <option value="Boyfriend">Boyfriend</option>
+                                    <option value="Girlfriend">Girlfriend</option>
+                                </optgroup>
                             </select>
                         </div>
 
@@ -479,18 +495,42 @@
                             <label for="occasion">🎉 Occasion</label>
                             <select id="occasion" required>
                                 <option value="">Select Occasion</option>
-                                <option value="Birthday">Birthday</option>
-                                <option value="Anniversary">Anniversary</option>
-                                <option value="Wedding">Wedding</option>
-                                <option value="Diwali">Diwali</option>
-                                <option value="Raksha Bandhan">Raksha Bandhan</option>
-                                <option value="Holi">Holi</option>
-                                <option value="Valentine's Day">Valentine's Day</option>
-                                <option value="Graduation">Graduation</option>
-                                <option value="Promotion">Promotion</option>
-                                <option value="Baby Shower">Baby Shower</option>
-                                <option value="House Warming">House Warming</option>
-                                <option value="Retirement">Retirement</option>
+                                <optgroup label="Major Festivals">
+                                    <option value="Diwali">Diwali</option>
+                                    <option value="Holi">Holi</option>
+                                    <option value="Raksha Bandhan">Raksha Bandhan</option>
+                                    <option value="Durga Puja">Durga Puja</option>
+                                    <option value="Ganesh Chaturthi">Ganesh Chaturthi</option>
+                                    <option value="Navratri">Navratri</option>
+                                    <option value="Janmashtami">Janmashtami</option>
+                                    <option value="Eid">Eid</option>
+                                    <option value="Christmas">Christmas</option>
+                                    <option value="Pongal">Pongal</option>
+                                    <option value="Onam">Onam</option>
+                                    <option value="Baisakhi">Baisakhi</option>
+                                    <option value="Karva Chauth">Karva Chauth</option>
+                                </optgroup>
+                                <optgroup label="New Year & Religious">
+                                    <option value="New Year">New Year</option>
+                                    <option value="Diwali New Year">Diwali New Year</option>
+                                    <option value="Puja">Puja</option>
+                                    <option value="Temple Visit">Temple Visit</option>
+                                </optgroup>
+                                <optgroup label="Life Milestones">
+                                    <option value="Birthday">Birthday</option>
+                                    <option value="Anniversary">Anniversary</option>
+                                    <option value="Wedding">Wedding</option>
+                                    <option value="Graduation">Graduation</option>
+                                    <option value="Promotion">Promotion</option>
+                                    <option value="Baby Shower">Baby Shower</option>
+                                    <option value="House Warming">House Warming</option>
+                                    <option value="Retirement">Retirement</option>
+                                </optgroup>
+                                <optgroup label="Other Occasions">
+                                    <option value="Valentine's Day">Valentine's Day</option>
+                                    <option value="Mother's Day">Mother's Day</option>
+                                    <option value="Father's Day">Father's Day</option>
+                                </optgroup>
                             </select>
                         </div>
 
@@ -564,8 +604,8 @@
     </div>
 
     <script>
-        // API Configuration
-        const API_URL = 'http://localhost:8000/api/v1/recommend';
+        // API Configuration - Use relative URL to work on same server
+        const API_URL = '/api/v1/recommend';
 
         // Form submission
         document.getElementById('giftForm').addEventListener('submit', async (e) => {

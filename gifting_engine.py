@@ -19,27 +19,59 @@ class GiftingEngine:
         "husband": {"formality": "casual", "closeness": "immediate_family", "special_note": "life partner"},
         "brother": {"formality": "casual", "closeness": "immediate_family", "special_note": "sibling bond"},
         "sister": {"formality": "casual", "closeness": "immediate_family", "special_note": "sibling bond"},
-        "friend": {"formality": "casual", "closeness": "social", "special_note": "peer relationship"},
-        "colleague": {"formality": "semi-formal", "closeness": "professional", "special_note": "work peer"},
         "son": {"formality": "casual", "closeness": "immediate_family", "special_note": "parent-child"},
         "daughter": {"formality": "casual", "closeness": "immediate_family", "special_note": "parent-child"},
+        "uncle": {"formality": "casual", "closeness": "extended_family", "special_note": "parental generation"},
+        "aunt": {"formality": "casual", "closeness": "extended_family", "special_note": "parental generation"},
+        "cousin": {"formality": "casual", "closeness": "extended_family", "special_note": "peer generation"},
+        "nephew": {"formality": "casual", "closeness": "extended_family", "special_note": "next generation"},
+        "niece": {"formality": "casual", "closeness": "extended_family", "special_note": "next generation"},
+        "friend": {"formality": "casual", "closeness": "social", "special_note": "peer relationship"},
+        "colleague": {"formality": "semi-formal", "closeness": "professional", "special_note": "work peer"},
         "boyfriend": {"formality": "casual", "closeness": "romantic", "special_note": "romantic partner"},
         "girlfriend": {"formality": "casual", "closeness": "romantic", "special_note": "romantic partner"},
+        "grandparent": {"formality": "casual", "closeness": "immediate_family", "special_note": "elder respect"},
+        "grandchild": {"formality": "casual", "closeness": "immediate_family", "special_note": "youngest generation"},
     }
 
     OCCASION_CONTEXT = {
-        "raksha bandhan": {"type": "festival", "cultural_significance": "high", "theme": "sibling bond"},
-        "wedding": {"type": "milestone", "cultural_significance": "very_high", "theme": "new beginnings"},
-        "birthday": {"type": "celebration", "cultural_significance": "medium", "theme": "personal"},
-        "anniversary": {"type": "milestone", "cultural_significance": "high", "theme": "togetherness"},
+        # Major Indian Festivals
         "diwali": {"type": "festival", "cultural_significance": "very_high", "theme": "prosperity"},
         "holi": {"type": "festival", "cultural_significance": "high", "theme": "colors and joy"},
+        "raksha bandhan": {"type": "festival", "cultural_significance": "high", "theme": "sibling bond"},
+        "durga puja": {"type": "festival", "cultural_significance": "very_high", "theme": "divine blessings"},
+        "ganesh chaturthi": {"type": "festival", "cultural_significance": "very_high", "theme": "new beginnings"},
+        "navratri": {"type": "festival", "cultural_significance": "very_high", "theme": "devotion"},
+        "janmashtami": {"type": "festival", "cultural_significance": "high", "theme": "celebration"},
+        "eid": {"type": "festival", "cultural_significance": "very_high", "theme": "togetherness"},
+        "christmas": {"type": "festival", "cultural_significance": "high", "theme": "joy and giving"},
+        "pongal": {"type": "festival", "cultural_significance": "high", "theme": "harvest celebration"},
+        "onam": {"type": "festival", "cultural_significance": "high", "theme": "harvest prosperity"},
+        "baisakhi": {"type": "festival", "cultural_significance": "high", "theme": "harvest festival"},
+
+        # New Year Celebrations
+        "new year": {"type": "celebration", "cultural_significance": "high", "theme": "new beginnings"},
+        "diwali new year": {"type": "festival", "cultural_significance": "very_high", "theme": "fresh start"},
+
+        # Religious Occasions
+        "puja": {"type": "religious", "cultural_significance": "high", "theme": "spiritual"},
+        "temple visit": {"type": "religious", "cultural_significance": "medium", "theme": "devotion"},
+
+        # Milestones
+        "wedding": {"type": "milestone", "cultural_significance": "very_high", "theme": "new beginnings"},
+        "anniversary": {"type": "milestone", "cultural_significance": "high", "theme": "togetherness"},
+        "birthday": {"type": "celebration", "cultural_significance": "medium", "theme": "personal"},
         "graduation": {"type": "milestone", "cultural_significance": "high", "theme": "achievement"},
         "promotion": {"type": "milestone", "cultural_significance": "medium", "theme": "career growth"},
         "baby shower": {"type": "milestone", "cultural_significance": "high", "theme": "new life"},
         "house warming": {"type": "milestone", "cultural_significance": "high", "theme": "new home"},
         "retirement": {"type": "milestone", "cultural_significance": "high", "theme": "new chapter"},
+
+        # Other Celebrations
         "valentine's day": {"type": "celebration", "cultural_significance": "medium", "theme": "romance"},
+        "karva chauth": {"type": "festival", "cultural_significance": "high", "theme": "marital bond"},
+        "mother's day": {"type": "celebration", "cultural_significance": "medium", "theme": "maternal love"},
+        "father's day": {"type": "celebration", "cultural_significance": "medium", "theme": "paternal love"},
     }
 
     # Gift categories with Indian context
