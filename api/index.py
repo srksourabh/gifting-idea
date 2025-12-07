@@ -482,7 +482,8 @@ HTML_PAGE = '''<!DOCTYPE html>
             </div>
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p style="color: #0d9488; font-size: 1.1rem;">Finding the perfect gifts for you...</p>
+                <p style="color: #0d9488; font-size: 1.1rem;">🤖 AI is analyzing your preferences...</p>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">Powered by Gemini AI - Finding personalized gifts</p>
             </div>
             <div class="results-section" id="results">
                 <div class="results-header">

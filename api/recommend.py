@@ -1,9 +1,155 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import random
+import os
+import urllib.request
+import urllib.error
 from urllib.parse import quote_plus
 
 
+# Gemini API Configuration
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+
+
+def call_gemini(prompt, max_tokens=2048):
+    """Call Gemini API and return the response text."""
+    if not GEMINI_API_KEY:
+        return None
+
+    try:
+        url = f"{GEMINI_API_URL}?key={GEMINI_API_KEY}"
+        data = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": 0.7,
+                "maxOutputTokens": max_tokens,
+            }
+        }
+
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(data).encode('utf-8'),
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+
+        with urllib.request.urlopen(req, timeout=30) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            if 'candidates' in result and len(result['candidates']) > 0:
+                return result['candidates'][0]['content']['parts'][0]['text']
+    except Exception as e:
+        print(f"Gemini API error: {e}")
+    return None
+
+
+def get_ai_recommendations(relationship, occasion, age_group, vibe, budget, gender, notes, gift_types):
+    """LLM-1: Generate gift recommendations using Gemini."""
+
+    gender_text = f", gender: {gender}" if gender else ""
+    notes_text = f"\nSpecial notes from user: {notes}" if notes else ""
+    types_text = f"\nPreferred gift types: {', '.join(gift_types)}" if gift_types else ""
+
+    prompt = f"""You are an expert Indian gift consultant. Generate exactly 10 unique gift recommendations.
+
+Context:
+- Recipient: {relationship}
+- Occasion: {occasion}
+- Age Group: {age_group}{gender_text}
+- Style/Vibe: {vibe}
+- Budget: Rs.{budget:,} INR{notes_text}{types_text}
+
+For each gift, provide in this EXACT JSON format (no markdown, just pure JSON array):
+[
+  {{
+    "title": "Gift Name",
+    "gift_type": "Formal|Funky|Romantic|Practical|Traditional|Luxury",
+    "description": "Brief description of why this is perfect",
+    "price": 1500,
+    "icon": "emoji"
+  }}
+]
+
+Requirements:
+- All gifts must be available in India
+- Prices should be realistic and within budget range (70%-110% of budget)
+- Consider Indian cultural context and traditions
+- If it's for a child, suggest age-appropriate gifts
+- Match the gift_type to one of: Formal, Funky, Romantic, Practical, Traditional, Luxury
+- Use appropriate emojis as icons
+
+Return ONLY the JSON array, no other text."""
+
+    response = call_gemini(prompt, max_tokens=2048)
+    if response:
+        try:
+            # Clean up response - remove markdown code blocks if present
+            cleaned = response.strip()
+            if cleaned.startswith('```'):
+                cleaned = cleaned.split('\n', 1)[1] if '\n' in cleaned else cleaned[3:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned.rsplit('```', 1)[0]
+            cleaned = cleaned.strip()
+            if cleaned.startswith('json'):
+                cleaned = cleaned[4:].strip()
+
+            gifts = json.loads(cleaned)
+            if isinstance(gifts, list) and len(gifts) > 0:
+                return gifts
+        except json.JSONDecodeError as e:
+            print(f"JSON parse error: {e}")
+    return None
+
+
+def get_ai_personalization(gifts, relationship, occasion, age_group, gender, notes):
+    """LLM-2: Add personalized reasoning for each gift using Gemini."""
+
+    gift_titles = [g.get('title', '') for g in gifts[:10]]
+    gender_text = f", {gender}" if gender else ""
+    notes_text = f"\nUser's note: {notes}" if notes else ""
+
+    prompt = f"""You are a gift psychology expert. For each gift below, explain WHY it's perfect for this specific person.
+
+Recipient: {relationship} ({age_group}{gender_text})
+Occasion: {occasion}{notes_text}
+
+Gifts to analyze:
+{json.dumps(gift_titles, indent=2)}
+
+For each gift, provide a personalized reason (2-3 bullet points joined with " • ") explaining:
+1. Why this gift suits their relationship
+2. Why it's appropriate for the occasion
+3. Any personal touch based on the notes (if provided)
+
+Return as JSON object with gift titles as keys:
+{{
+  "Gift Name 1": "Reason 1 • Reason 2 • Reason 3",
+  "Gift Name 2": "Reason 1 • Reason 2"
+}}
+
+Return ONLY the JSON object, no other text."""
+
+    response = call_gemini(prompt, max_tokens=1500)
+    if response:
+        try:
+            cleaned = response.strip()
+            if cleaned.startswith('```'):
+                cleaned = cleaned.split('\n', 1)[1] if '\n' in cleaned else cleaned[3:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned.rsplit('```', 1)[0]
+            cleaned = cleaned.strip()
+            if cleaned.startswith('json'):
+                cleaned = cleaned[4:].strip()
+
+            reasons = json.loads(cleaned)
+            if isinstance(reasons, dict):
+                return reasons
+        except json.JSONDecodeError as e:
+            print(f"JSON parse error in personalization: {e}")
+    return None
+
+
+# Fallback data for when API is unavailable
 GIFT_DATABASE = {
     "traditional": ["Silver Pooja Items", "Brass Diya Set", "Traditional Silk Saree", "Kurta Pajama Set", "Handcrafted Jewelry", "Silver Coins", "Copper Water Bottle", "Traditional Sweet Box"],
     "modern": ["Smart Watch", "Bluetooth Speaker", "Power Bank", "Wireless Earbuds", "Coffee Maker", "Air Purifier", "Electric Kettle", "Grooming Kit"],
@@ -19,7 +165,6 @@ GIFT_DATABASE = {
     "kids_girls": ["Art and Craft Kit", "Doll House Set", "Story Books Set", "Educational Toys", "Dance Costume Set", "Jewelry Making Kit"],
 }
 
-# Gift type classification (formal, funky, romantic, practical, traditional, luxury)
 GIFT_TYPE_TAGS = {
     "Silver Pooja Items": "Traditional", "Brass Diya Set": "Traditional", "Traditional Silk Saree": "Traditional",
     "Kurta Pajama Set": "Formal", "Handcrafted Jewelry": "Traditional", "Silver Coins": "Formal",
@@ -102,7 +247,8 @@ PRO_TIPS = {
 }
 
 
-def get_recommendations(relationship, occasion, age_group, vibe, budget, gender="", notes="", gift_types=None):
+def get_fallback_recommendations(relationship, occasion, age_group, vibe, budget, gender="", notes="", gift_types=None):
+    """Fallback to rule-based recommendations when AI is unavailable."""
     if gift_types is None:
         gift_types = ["Formal", "Funky", "Romantic", "Practical", "Traditional", "Luxury"]
 
@@ -131,7 +277,6 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
     if occ_type == "festival":
         categories.insert(0, "festive")
 
-    # Handle children with gender-specific gifts
     if age_group and age_group.lower() == "child":
         if gender and gender.lower() == "male":
             categories = ["kids_boys", "kids", "personalized"] + categories
@@ -146,7 +291,6 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
 
     while len(recommendations) < 10 and attempt < 50:
         cat = categories[attempt % len(categories)]
-        # Filter items by selected gift types
         items = [x for x in GIFT_DATABASE.get(cat, GIFT_DATABASE["modern"])
                  if x not in used and GIFT_TYPE_TAGS.get(x, "Practical") in gift_types]
         if not items:
@@ -166,7 +310,6 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
                 f"Thoughtful present that strengthens your bond"
             ]
 
-            # Generate personalized reason for this gift
             why_reasons = []
             if rel_type == "immediate_family":
                 why_reasons.append(f"Your {relationship} deserves something special that shows deep appreciation")
@@ -181,35 +324,14 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
                 why_reasons.append(f"Aligns beautifully with the spirit and traditions of {occasion}")
             elif occ_type == "milestone":
                 why_reasons.append(f"Commemorates this important {occasion} milestone meaningfully")
-            elif occ_type == "romantic":
-                why_reasons.append(f"Captures the romantic essence of {occasion}")
             else:
                 why_reasons.append(f"Ideal for celebrating {occasion}")
 
-            if age_group and age_group.lower() == "child":
-                gender_text = " boy" if gender and gender.lower() == "male" else (" girl" if gender and gender.lower() == "female" else "")
-                why_reasons.append(f"Age-appropriate and engaging for children{gender_text}")
-            elif age_group and age_group.lower() == "senior":
-                why_reasons.append("Practical and valued by seniors")
-            elif age_group and age_group.lower() == "teenager":
-                why_reasons.append("Trendy and appealing for teenagers")
-
-            if "traditional" in vibe_lower:
-                why_reasons.append("Honors traditional values and cultural heritage")
-            elif "tech" in vibe_lower:
-                why_reasons.append("Modern tech gift for the gadget enthusiast")
-            elif "luxury" in vibe_lower:
-                why_reasons.append("Premium quality that makes a lasting impression")
-            elif "wellness" in vibe_lower:
-                why_reasons.append("Promotes health and well-being")
-
-            # Add personalized note if provided
             if notes and notes.strip():
                 why_reasons.append(f"Considering your note: {notes.strip()[:50]}")
 
             why_applicable = " • ".join(why_reasons[:3])
             gift_type_tag = GIFT_TYPE_TAGS.get(item, "Practical")
-
             icon = GIFT_ICONS.get(item, "🎁")
             encoded_item = quote_plus(item)
 
@@ -232,16 +354,75 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
             })
         attempt += 1
 
+    return recommendations
+
+
+def get_recommendations(relationship, occasion, age_group, vibe, budget, gender="", notes="", gift_types=None):
+    """Main function that uses dual-LLM approach with fallback."""
+    if gift_types is None:
+        gift_types = ["Formal", "Funky", "Romantic", "Practical", "Traditional", "Luxury"]
+
+    rel_type = RELATIONSHIPS.get(relationship.lower(), "general")
+    occ_type = OCCASIONS.get(occasion.lower(), "celebration")
+
+    ai_powered = False
+    recommendations = []
+
+    # Try AI-powered recommendations if API key is available
+    if GEMINI_API_KEY:
+        # LLM-1: Generate gift ideas
+        ai_gifts = get_ai_recommendations(relationship, occasion, age_group, vibe, budget, gender, notes, gift_types)
+
+        if ai_gifts:
+            # LLM-2: Add personalized reasoning
+            personalization = get_ai_personalization(ai_gifts, relationship, occasion, age_group, gender, notes)
+
+            for i, gift in enumerate(ai_gifts[:10]):
+                title = gift.get('title', 'Gift')
+                encoded_item = quote_plus(title)
+
+                # Get personalized reason from LLM-2, or use LLM-1's description
+                why_applicable = gift.get('description', '')
+                if personalization and title in personalization:
+                    why_applicable = personalization[title]
+
+                recommendations.append({
+                    "id": i + 1,
+                    "title": title,
+                    "icon": gift.get('icon', '🎁'),
+                    "gift_type": gift.get('gift_type', 'Practical'),
+                    "description": gift.get('description', f"Perfect gift for {relationship}"),
+                    "why_applicable": why_applicable,
+                    "approx_price_inr": f"Rs.{gift.get('price', budget):,}",
+                    "purchase_links": {
+                        "amazon": f"https://www.amazon.in/s?k={encoded_item}",
+                        "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
+                        "myntra": f"https://www.myntra.com/{encoded_item}",
+                        "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
+                        "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
+                        "meesho": f"https://www.meesho.com/search?q={encoded_item}"
+                    }
+                })
+            ai_powered = True
+
+    # Fallback to rule-based if AI failed or no API key
+    if not recommendations:
+        recommendations = get_fallback_recommendations(
+            relationship, occasion, age_group, vibe, budget, gender, notes, gift_types
+        )
+
     pro_tip = PRO_TIPS.get(occasion.lower(), PRO_TIPS.get("professional" if rel_type == "professional" else "default", PRO_TIPS["default"]))
 
     gender_text = f", {gender} gender" if gender else ""
     notes_text = f", with special note: '{notes[:30]}...'" if notes and len(notes) > 30 else (f", with note: '{notes}'" if notes else "")
     types_text = f", filtering by: {', '.join(gift_types)}" if len(gift_types) < 6 else ""
+    ai_text = " [AI-Powered by Gemini]" if ai_powered else " [Smart Recommendations]"
 
     return {
-        "thinking_trace": f"Analyzing gift for {relationship} on {occasion}. Considering {rel_type} relationship type, {occ_type} occasion, {age_group} age group{gender_text}, {vibe} style preference, and Rs.{budget:,} budget{notes_text}{types_text}.",
+        "thinking_trace": f"Analyzing gift for {relationship} on {occasion}. Considering {rel_type} relationship type, {occ_type} occasion, {age_group} age group{gender_text}, {vibe} style preference, and Rs.{budget:,} budget{notes_text}{types_text}.{ai_text}",
         "recommendations": recommendations,
-        "pro_tip": pro_tip
+        "pro_tip": pro_tip,
+        "ai_powered": ai_powered
     }
 
 
