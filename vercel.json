@@ -2,6 +2,7 @@
   "version": 2,
   "rewrites": [
     { "source": "/", "destination": "/api/index" },
-    { "source": "/api/recommend", "destination": "/api/recommend" }
+    { "source": "/api/recommend", "destination": "/api/recommend" },
+    { "source": "/favicon.ico", "destination": "/api/favicon.ico" }
   ]
 }
