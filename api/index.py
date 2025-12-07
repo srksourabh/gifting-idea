@@ -15,6 +15,34 @@ GIFT_DATABASE = {
     "home": ["Wall Clock", "Decorative Showpiece", "Table Lamp", "Bedsheet Set", "Dinner Set", "Indoor Plant with Planter"],
     "tech": ["Tablet", "Kindle E-reader", "Smart Home Device", "Gaming Accessories", "Portable Projector"],
     "kids": ["Educational Toys", "Building Blocks Set", "Art and Craft Kit", "Remote Control Car", "Story Books Set"],
+    "kids_boys": ["Remote Control Car", "Building Blocks Set", "Gaming Accessories", "Story Books Set", "Cricket Kit", "Football"],
+    "kids_girls": ["Art and Craft Kit", "Doll House Set", "Story Books Set", "Educational Toys", "Dance Costume Set", "Jewelry Making Kit"],
+}
+
+# Gift type classification (formal, funky, romantic, practical, traditional, luxury)
+GIFT_TYPE_TAGS = {
+    "Silver Pooja Items": "Traditional", "Brass Diya Set": "Traditional", "Traditional Silk Saree": "Traditional",
+    "Kurta Pajama Set": "Formal", "Handcrafted Jewelry": "Traditional", "Silver Coins": "Formal",
+    "Copper Water Bottle": "Practical", "Traditional Sweet Box": "Traditional", "Smart Watch": "Practical",
+    "Bluetooth Speaker": "Funky", "Power Bank": "Practical", "Wireless Earbuds": "Practical",
+    "Coffee Maker": "Practical", "Air Purifier": "Practical", "Electric Kettle": "Practical", "Grooming Kit": "Practical",
+    "Customized Photo Frame": "Romantic", "Engraved Pen Set": "Formal", "Personalized Cushion": "Funky",
+    "Photo Coffee Mug": "Funky", "Custom Name Plate": "Formal", "Customized Diary": "Formal",
+    "Designer Perfume": "Luxury", "Premium Watch": "Luxury", "Leather Wallet": "Formal",
+    "Designer Sunglasses": "Luxury", "Branded Handbag": "Luxury", "Premium Tea Gift Set": "Formal",
+    "Luxury Chocolate Box": "Luxury", "Yoga Mat": "Practical", "Essential Oil Diffuser": "Practical",
+    "Spa Gift Hamper": "Luxury", "Fitness Tracker": "Practical", "Organic Skincare Set": "Luxury",
+    "Meditation Kit": "Practical", "Decorative Diya Set": "Traditional", "Rangoli Kit": "Traditional",
+    "Festival Sweet Hamper": "Traditional", "Pooja Thali Set": "Traditional", "Festive Dry Fruit Box": "Formal",
+    "Decorative Toran": "Traditional", "Couple Watches": "Romantic", "Heart-shaped Jewelry": "Romantic",
+    "Perfume Gift Set": "Romantic", "Love Letter Kit": "Romantic", "Couple Keychains": "Romantic",
+    "Wall Clock": "Practical", "Decorative Showpiece": "Formal", "Table Lamp": "Practical",
+    "Bedsheet Set": "Practical", "Dinner Set": "Formal", "Indoor Plant with Planter": "Practical",
+    "Tablet": "Practical", "Kindle E-reader": "Practical", "Smart Home Device": "Practical",
+    "Gaming Accessories": "Funky", "Portable Projector": "Practical", "Educational Toys": "Practical",
+    "Building Blocks Set": "Funky", "Art and Craft Kit": "Funky", "Remote Control Car": "Funky",
+    "Story Books Set": "Practical", "Cricket Kit": "Funky", "Football": "Funky",
+    "Doll House Set": "Funky", "Dance Costume Set": "Funky", "Jewelry Making Kit": "Funky"
 }
 
 # Emoji icons for each gift type
@@ -39,7 +67,8 @@ GIFT_ICONS = {
     "Tablet": "📱", "Kindle E-reader": "📚", "Smart Home Device": "🏠",
     "Gaming Accessories": "🎮", "Portable Projector": "📽️", "Educational Toys": "🧩",
     "Building Blocks Set": "🧱", "Art and Craft Kit": "🎨", "Remote Control Car": "🚗",
-    "Story Books Set": "📚", "Healthy Snack Box": "🥗"
+    "Story Books Set": "📚", "Healthy Snack Box": "🥗", "Cricket Kit": "🏏", "Football": "⚽",
+    "Doll House Set": "🏠", "Dance Costume Set": "💃", "Jewelry Making Kit": "💎"
 }
 
 RELATIONSHIPS = {
@@ -74,7 +103,10 @@ PRO_TIPS = {
 }
 
 
-def get_recommendations(relationship, occasion, age_group, vibe, budget):
+def get_recommendations(relationship, occasion, age_group, vibe, budget, gender="", notes="", gift_types=None):
+    if gift_types is None:
+        gift_types = ["Formal", "Funky", "Romantic", "Practical", "Traditional", "Luxury"]
+
     rel_type = RELATIONSHIPS.get(relationship.lower(), "general")
     occ_type = OCCASIONS.get(occasion.lower(), "celebration")
 
@@ -100,19 +132,29 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
     if occ_type == "festival":
         categories.insert(0, "festive")
 
+    # Handle children with gender-specific gifts
     if age_group and age_group.lower() == "child":
-        categories = ["kids", "personalized"] + categories
+        if gender and gender.lower() == "male":
+            categories = ["kids_boys", "kids", "personalized"] + categories
+        elif gender and gender.lower() == "female":
+            categories = ["kids_girls", "kids", "personalized"] + categories
+        else:
+            categories = ["kids", "personalized"] + categories
 
     recommendations = []
     used = set()
+    attempt = 0
 
-    for i in range(10):
-        cat = categories[i % len(categories)]
-        items = [x for x in GIFT_DATABASE.get(cat, GIFT_DATABASE["modern"]) if x not in used]
+    while len(recommendations) < 10 and attempt < 50:
+        cat = categories[attempt % len(categories)]
+        # Filter items by selected gift types
+        items = [x for x in GIFT_DATABASE.get(cat, GIFT_DATABASE["modern"])
+                 if x not in used and GIFT_TYPE_TAGS.get(x, "Practical") in gift_types]
         if not items:
-            items = [x for v in GIFT_DATABASE.values() for x in v if x not in used]
+            items = [x for v in GIFT_DATABASE.values() for x in v
+                     if x not in used and GIFT_TYPE_TAGS.get(x, "Practical") in gift_types]
         if items:
-            random.seed(hash(f"{relationship}{occasion}{vibe}{i}"))
+            random.seed(hash(f"{relationship}{occasion}{vibe}{gender}{attempt}"))
             item = random.choice(items)
             used.add(item)
             price = round(budget * random.uniform(0.7, 1.1) / 50) * 50
@@ -146,7 +188,8 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
                 why_reasons.append(f"Ideal for celebrating {occasion}")
 
             if age_group and age_group.lower() == "child":
-                why_reasons.append("Age-appropriate and engaging for children")
+                gender_text = " boy" if gender and gender.lower() == "male" else (" girl" if gender and gender.lower() == "female" else "")
+                why_reasons.append(f"Age-appropriate and engaging for children{gender_text}")
             elif age_group and age_group.lower() == "senior":
                 why_reasons.append("Practical and valued by seniors")
             elif age_group and age_group.lower() == "teenager":
@@ -161,16 +204,22 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
             elif "wellness" in vibe_lower:
                 why_reasons.append("Promotes health and well-being")
 
+            # Add personalized note if provided
+            if notes and notes.strip():
+                why_reasons.append(f"Considering your note: {notes.strip()[:50]}")
+
             why_applicable = " • ".join(why_reasons[:3])
+            gift_type_tag = GIFT_TYPE_TAGS.get(item, "Practical")
 
             icon = GIFT_ICONS.get(item, "🎁")
             encoded_item = quote_plus(item)
 
             recommendations.append({
-                "id": i + 1,
+                "id": len(recommendations) + 1,
                 "title": item,
                 "icon": icon,
-                "description": descriptions[i % len(descriptions)],
+                "gift_type": gift_type_tag,
+                "description": descriptions[len(recommendations) % len(descriptions)],
                 "why_applicable": why_applicable,
                 "approx_price_inr": f"Rs.{price:,}",
                 "purchase_links": {
@@ -182,11 +231,16 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
                     "meesho": f"https://www.meesho.com/search?q={encoded_item}"
                 }
             })
+        attempt += 1
 
     pro_tip = PRO_TIPS.get(occasion.lower(), PRO_TIPS.get("professional" if rel_type == "professional" else "default", PRO_TIPS["default"]))
 
+    gender_text = f", {gender} gender" if gender else ""
+    notes_text = f", with special note: '{notes[:30]}...'" if notes and len(notes) > 30 else (f", with note: '{notes}'" if notes else "")
+    types_text = f", filtering by: {', '.join(gift_types)}" if len(gift_types) < 6 else ""
+
     return {
-        "thinking_trace": f"Analyzing gift for {relationship} on {occasion}. Considering {rel_type} relationship type, {occ_type} occasion, {age_group} age group, {vibe} style preference, and Rs.{budget:,} budget.",
+        "thinking_trace": f"Analyzing gift for {relationship} on {occasion}. Considering {rel_type} relationship type, {occ_type} occasion, {age_group} age group{gender_text}, {vibe} style preference, and Rs.{budget:,} budget{notes_text}{types_text}.",
         "recommendations": recommendations,
         "pro_tip": pro_tip
     }
@@ -256,6 +310,25 @@ HTML_PAGE = '''<!DOCTYPE html>
         .edit-btn { padding: 12px 40px; background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3); }
         .edit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(13, 148, 136, 0.5); }
         .error { background: #fef2f2; color: #dc2626; padding: 15px; border-radius: 10px; margin-top: 15px; display: none; text-align: center; }
+        .form-group textarea { padding: 14px 16px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; background: #f8f9fa; resize: vertical; min-height: 80px; }
+        .form-group textarea:focus { outline: none; border-color: #0d9488; background: white; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        .full-width { grid-column: 1 / -1; }
+        .gift-types-section { margin-bottom: 25px; }
+        .gift-types-label { font-weight: 600; margin-bottom: 12px; color: #555; font-size: 0.9rem; display: block; }
+        .gift-types-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+        .gift-type-checkbox { display: none; }
+        .gift-type-label { padding: 10px 18px; border: 2px solid #e0e0e0; border-radius: 25px; cursor: pointer; transition: all 0.3s ease; font-size: 0.9rem; font-weight: 500; background: #f8f9fa; color: #666; }
+        .gift-type-checkbox:checked + .gift-type-label { background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; border-color: #0d9488; box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3); }
+        .gift-type-label:hover { border-color: #0d9488; background: #f0fdfa; }
+        .gift-type-checkbox:checked + .gift-type-label:hover { background: linear-gradient(135deg, #0f766e 0%, #0e7490 100%); }
+        .gift-type-tag { position: absolute; top: 12px; right: 12px; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+        .gift-card { position: relative; }
+        .tag-formal { background: #1e40af; color: white; }
+        .tag-funky { background: #dc2626; color: white; }
+        .tag-romantic { background: #db2777; color: white; }
+        .tag-practical { background: #059669; color: white; }
+        .tag-traditional { background: #d97706; color: white; }
+        .tag-luxury { background: #7c3aed; color: white; }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -356,6 +429,14 @@ HTML_PAGE = '''<!DOCTYPE html>
                             </select>
                         </div>
                         <div class="form-group">
+                            <label>👤 Gender</label>
+                            <select id="gender">
+                                <option value="">Select Gender (Optional)</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>✨ Vibe/Style</label>
                             <select id="vibe" required>
                                 <option value="">Select Vibe</option>
@@ -372,6 +453,27 @@ HTML_PAGE = '''<!DOCTYPE html>
                         <div class="form-group">
                             <label>💰 Budget (INR)</label>
                             <input type="number" id="budget" placeholder="Enter amount (e.g., 2000)" min="100" max="1000000" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>📝 Anything you wish to add?</label>
+                            <textarea id="notes" placeholder="e.g., She loves to paint, He enjoys cooking, They are into fitness..."></textarea>
+                        </div>
+                    </div>
+                    <div class="gift-types-section">
+                        <span class="gift-types-label">🎯 Gift Types (click to deselect)</span>
+                        <div class="gift-types-grid">
+                            <input type="checkbox" id="type-formal" class="gift-type-checkbox" checked>
+                            <label for="type-formal" class="gift-type-label">💼 Formal</label>
+                            <input type="checkbox" id="type-funky" class="gift-type-checkbox" checked>
+                            <label for="type-funky" class="gift-type-label">🎉 Funky</label>
+                            <input type="checkbox" id="type-romantic" class="gift-type-checkbox" checked>
+                            <label for="type-romantic" class="gift-type-label">💕 Romantic</label>
+                            <input type="checkbox" id="type-practical" class="gift-type-checkbox" checked>
+                            <label for="type-practical" class="gift-type-label">🔧 Practical</label>
+                            <input type="checkbox" id="type-traditional" class="gift-type-checkbox" checked>
+                            <label for="type-traditional" class="gift-type-label">🪔 Traditional</label>
+                            <input type="checkbox" id="type-luxury" class="gift-type-checkbox" checked>
+                            <label for="type-luxury" class="gift-type-label">💎 Luxury</label>
                         </div>
                     </div>
                     <button type="submit" class="submit-btn">✨ Find Perfect Gifts</button>
@@ -403,14 +505,27 @@ HTML_PAGE = '''<!DOCTYPE html>
         </div>
     </div>
     <script>
+        function getSelectedGiftTypes() {
+            const types = [];
+            if (document.getElementById('type-formal').checked) types.push('Formal');
+            if (document.getElementById('type-funky').checked) types.push('Funky');
+            if (document.getElementById('type-romantic').checked) types.push('Romantic');
+            if (document.getElementById('type-practical').checked) types.push('Practical');
+            if (document.getElementById('type-traditional').checked) types.push('Traditional');
+            if (document.getElementById('type-luxury').checked) types.push('Luxury');
+            return types.length > 0 ? types : ['Formal', 'Funky', 'Romantic', 'Practical', 'Traditional', 'Luxury'];
+        }
         document.getElementById('giftForm').onsubmit = async (e) => {
             e.preventDefault();
             const data = {
                 relationship: document.getElementById('relationship').value,
                 occasion: document.getElementById('occasion').value,
                 age_group: document.getElementById('ageGroup').value,
+                gender: document.getElementById('gender').value,
                 vibe: document.getElementById('vibe').value,
-                budget: parseInt(document.getElementById('budget').value)
+                budget: parseInt(document.getElementById('budget').value),
+                notes: document.getElementById('notes').value,
+                gift_types: getSelectedGiftTypes()
             };
             document.getElementById('formSection').style.display = 'none';
             document.getElementById('loading').style.display = 'block';
@@ -435,8 +550,10 @@ HTML_PAGE = '''<!DOCTYPE html>
             document.getElementById('results').style.display = 'block';
             document.getElementById('thinkingText').textContent = data.thinking_trace;
             document.getElementById('proTipText').textContent = data.pro_tip;
-            document.getElementById('giftsGrid').innerHTML = data.recommendations.map(g =>
-                '<div class="gift-card">' +
+            document.getElementById('giftsGrid').innerHTML = data.recommendations.map(g => {
+                const tagClass = 'tag-' + (g.gift_type || 'practical').toLowerCase();
+                return '<div class="gift-card">' +
+                    '<span class="gift-type-tag ' + tagClass + '">' + (g.gift_type || 'Practical') + '</span>' +
                     '<div class="gift-header">' +
                         '<div class="gift-icon">' + g.icon + '</div>' +
                         '<div class="gift-info">' +
@@ -458,12 +575,13 @@ HTML_PAGE = '''<!DOCTYPE html>
                         '<a href="' + g.purchase_links.blinkit + '" target="_blank" class="purchase-btn blinkit-btn">Blinkit</a>' +
                         '<a href="' + g.purchase_links.meesho + '" target="_blank" class="purchase-btn meesho-btn">Meesho</a>' +
                     '</div>' +
-                '</div>'
-            ).join('');
+                '</div>';
+            }).join('');
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
         function reset() {
             document.getElementById('giftForm').reset();
+            document.querySelectorAll('.gift-type-checkbox').forEach(cb => cb.checked = true);
             document.getElementById('results').style.display = 'none';
             document.getElementById('formSection').style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -496,7 +614,10 @@ class handler(BaseHTTPRequestHandler):
             data.get('occasion', 'Birthday'),
             data.get('age_group', 'Adult'),
             data.get('vibe', 'Traditional'),
-            data.get('budget', 2000)
+            data.get('budget', 2000),
+            data.get('gender', ''),
+            data.get('notes', ''),
+            data.get('gift_types', None)
         )
 
         self.send_response(200)
