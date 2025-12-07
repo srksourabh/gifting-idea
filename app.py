@@ -4,9 +4,12 @@ FastAPI backend for Indian personal shopper and gifting concierge
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from typing import Optional
 from gifting_engine import GiftingEngine
+import os
 
 app = FastAPI(
     title="GiftingGenie API",
@@ -25,6 +28,11 @@ app.add_middleware(
 
 # Initialize the gifting engine
 gifting_engine = GiftingEngine()
+
+# Mount static files
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
 class GiftRequest(BaseModel):
@@ -60,12 +68,16 @@ class GiftRequest(BaseModel):
 
 @app.get("/")
 async def root():
-    """API health check endpoint"""
+    """Serve the main landing page"""
+    static_file = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    if os.path.exists(static_file):
+        return FileResponse(static_file)
     return {
         "status": "active",
         "service": "GiftingGenie API",
         "version": "1.0.0",
-        "description": "Expert Indian Personal Shopper & Gifting Concierge"
+        "description": "Expert Indian Personal Shopper & Gifting Concierge",
+        "web_ui": "Visit /static/index.html for the web interface"
     }
 
 

@@ -6,12 +6,14 @@ A FastAPI-based recommendation system that suggests culturally-appropriate gifts
 
 ## 🌟 Features
 
+- **Beautiful Web Interface**: Stunning single-page application with modern design
 - **Cultural Intelligence**: Deep understanding of Indian relationships, festivals, and gifting traditions
 - **Smart Recommendations**: 5 unique gift suggestions per request
 - **Budget-Aware**: Intelligent price estimation within specified budget
 - **E-commerce Integration**: Direct search links for Amazon India and Flipkart
 - **RESTful API**: Clean, well-documented API endpoints
 - **Pro Tips**: Culturally-relevant advice for each occasion
+- **Mobile Responsive**: Works perfectly on all devices
 
 ## 🚀 Quick Start
 
@@ -38,7 +40,20 @@ uvicorn app:app --reload --host 0.0.0.0 --port 8000
 
 The API will be available at `http://localhost:8000`
 
-Interactive API documentation: `http://localhost:8000/docs`
+**🎨 Web Interface:** `http://localhost:8000` (Beautiful landing page)
+
+**📖 API Documentation:** `http://localhost:8000/docs` (Interactive Swagger UI)
+
+### 🌐 Using the Web Interface
+
+Simply open your browser and navigate to `http://localhost:8000` to access the beautiful web interface where you can:
+
+1. Fill in the gift recipient details (relationship, occasion, age, vibe, budget)
+2. Click "Find Perfect Gifts"
+3. Get 5 personalized gift recommendations with direct purchase links
+4. See culturally-relevant pro tips for the occasion
+
+**No coding required!** Perfect for non-technical users.
 
 ## 📚 API Endpoints
 
@@ -198,10 +213,15 @@ fetch('http://localhost:8000/api/v1/recommend', {
 gifting-idea/
 ├── app.py                  # FastAPI application and endpoints
 ├── gifting_engine.py       # Core recommendation logic
+├── static/
+│   └── index.html         # Beautiful web interface (single-page app)
 ├── requirements.txt        # Python dependencies
 ├── test_api.py            # Test suite
 ├── example_request.json   # Sample request
-└── README.md              # Documentation
+├── run_server.sh          # Quick start script
+├── README.md              # Documentation
+├── WEB_INTERFACE.md       # Web UI documentation
+└── API_EXAMPLES.md        # API usage examples
 ```
 
 ### Key Components
@@ -217,6 +237,14 @@ gifting-idea/
    - Request validation with Pydantic
    - CORS support for mobile apps
    - Interactive API documentation
+   - Static file serving for web interface
+
+3. **Web Interface** (`static/index.html`)
+   - Beautiful single-page application
+   - Modern gradient design with animations
+   - Fully responsive (mobile, tablet, desktop)
+   - Direct integration with API
+   - No build process required
 
 ## 🎨 Cultural Intelligence
 

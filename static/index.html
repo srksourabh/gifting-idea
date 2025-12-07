@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiftingGenie - Your Personal Gifting Concierge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header .subtitle {
+            font-size: 1.3rem;
+            font-weight: 300;
+            opacity: 0.95;
+        }
+
+        .header .emoji {
+            font-size: 4rem;
+            display: inline-block;
+            animation: bounce 2s infinite;
+        }
+
+        /* Main Card */
+        .main-card {
+            background: white;
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        /* Form Section */
+        .form-section {
+            margin-bottom: 40px;
+        }
+
+        .form-title {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 14px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .budget-input {
+            position: relative;
+        }
+
+        .budget-input input {
+            padding-left: 35px;
+        }
+
+        .budget-input::before {
+            content: '₹';
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            margin-top: 50px;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .results-header h2 {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .thinking-trace {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .thinking-trace h3 {
+            color: #667eea;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .thinking-trace p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Gift Cards Grid */
+        .gifts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .gift-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .gift-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .gift-number {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 35px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .gift-title {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .gift-description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .gift-price {
+            font-size: 1.8rem;
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .purchase-links {
+            display: flex;
+            gap: 12px;
+        }
+
+        .purchase-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .amazon-btn {
+            background: #FF9900;
+            color: white;
+        }
+
+        .amazon-btn:hover {
+            background: #e88b00;
+            transform: scale(1.05);
+        }
+
+        .flipkart-btn {
+            background: #2874F0;
+            color: white;
+        }
+
+        .flipkart-btn:hover {
+            background: #1d5fc7;
+            transform: scale(1.05);
+        }
+
+        /* Pro Tip */
+        .pro-tip {
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .pro-tip h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .pro-tip p {
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .header .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .main-card {
+                padding: 30px 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .gifts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .purchase-links {
+                flex-direction: column;
+            }
+        }
+
+        /* Error Message */
+        .error-message {
+            background: #ff4444;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        /* Back Button */
+        .back-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 30px auto;
+            display: block;
+            width: fit-content;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="emoji">🎁</div>
+            <h1>GiftingGenie</h1>
+            <p class="subtitle">Your Personal Indian Gifting Concierge - Find the Perfect Gift in Seconds</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="main-card">
+            <!-- Form Section -->
+            <div class="form-section" id="formSection">
+                <h2 class="form-title">Tell Us About Your Gift Recipient</h2>
+
+                <form id="giftForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="relationship">👥 Relationship</label>
+                            <select id="relationship" required>
+                                <option value="">Select Relationship</option>
+                                <option value="Mother">Mother</option>
+                                <option value="Father">Father</option>
+                                <option value="Brother">Brother</option>
+                                <option value="Sister">Sister</option>
+                                <option value="Wife">Wife</option>
+                                <option value="Husband">Husband</option>
+                                <option value="Son">Son</option>
+                                <option value="Daughter">Daughter</option>
+                                <option value="Saali">Saali (Sister-in-law)</option>
+                                <option value="Boss">Boss</option>
+                                <option value="Colleague">Colleague</option>
+                                <option value="Friend">Friend</option>
+                                <option value="Boyfriend">Boyfriend</option>
+                                <option value="Girlfriend">Girlfriend</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="occasion">🎉 Occasion</label>
+                            <select id="occasion" required>
+                                <option value="">Select Occasion</option>
+                                <option value="Birthday">Birthday</option>
+                                <option value="Anniversary">Anniversary</option>
+                                <option value="Wedding">Wedding</option>
+                                <option value="Diwali">Diwali</option>
+                                <option value="Raksha Bandhan">Raksha Bandhan</option>
+                                <option value="Holi">Holi</option>
+                                <option value="Valentine's Day">Valentine's Day</option>
+                                <option value="Graduation">Graduation</option>
+                                <option value="Promotion">Promotion</option>
+                                <option value="Baby Shower">Baby Shower</option>
+                                <option value="House Warming">House Warming</option>
+                                <option value="Retirement">Retirement</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ageGroup">🎂 Age Group</label>
+                            <select id="ageGroup" required>
+                                <option value="">Select Age Group</option>
+                                <option value="Child">Child (0-12)</option>
+                                <option value="Teenager">Teenager (13-19)</option>
+                                <option value="Adult">Adult (20-59)</option>
+                                <option value="Senior">Senior (60+)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="vibe">✨ Vibe/Style</label>
+                            <select id="vibe" required>
+                                <option value="">Select Vibe</option>
+                                <option value="Traditional">Traditional/Ethnic</option>
+                                <option value="Modern">Modern/Contemporary</option>
+                                <option value="Personalized">Personalized</option>
+                                <option value="Luxury">Luxury/Premium</option>
+                                <option value="Wellness">Wellness-focused</option>
+                                <option value="Tech">Tech-savvy</option>
+                                <option value="Romantic">Romantic</option>
+                                <option value="Fun">Fun/Quirky</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group budget-input">
+                            <label for="budget">💰 Budget (INR)</label>
+                            <input type="number" id="budget" placeholder="2000" min="100" max="1000000" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        ✨ Find Perfect Gifts
+                    </button>
+                </form>
+
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+
+            <!-- Loading Section -->
+            <div class="loading" id="loadingSection">
+                <div class="spinner"></div>
+                <p style="color: #667eea; font-size: 1.2rem; font-weight: 600;">Finding the perfect gifts for you...</p>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection">
+                <div class="results-header">
+                    <h2>🎁 Your Perfect Gift Ideas</h2>
+                </div>
+
+                <div class="thinking-trace" id="thinkingTrace">
+                    <h3>💭 Our Recommendation Logic</h3>
+                    <p id="thinkingText"></p>
+                </div>
+
+                <div class="gifts-grid" id="giftsGrid"></div>
+
+                <div class="pro-tip" id="proTip">
+                    <h3>💡 Pro Tip</h3>
+                    <p id="proTipText"></p>
+                </div>
+
+                <button class="back-btn" onclick="resetForm()">🔄 Find More Gifts</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_URL = 'http://localhost:8000/api/v1/recommend';
+
+        // Form submission
+        document.getElementById('giftForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get form values
+            const formData = {
+                relationship: document.getElementById('relationship').value,
+                occasion: document.getElementById('occasion').value,
+                age_group: document.getElementById('ageGroup').value,
+                vibe: document.getElementById('vibe').value,
+                budget: parseInt(document.getElementById('budget').value)
+            };
+
+            // Show loading, hide form
+            document.getElementById('formSection').style.display = 'none';
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            try {
+                // Call API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch recommendations');
+                }
+
+                const data = await response.json();
+
+                // Display results
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('formSection').style.display = 'block';
+                const errorMsg = document.getElementById('errorMessage');
+                errorMsg.textContent = '❌ Oops! Something went wrong. Please make sure the API server is running and try again.';
+                errorMsg.style.display = 'block';
+            }
+        });
+
+        // Display results
+        function displayResults(data) {
+            // Hide loading
+            document.getElementById('loadingSection').style.display = 'none';
+
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+
+            // Display thinking trace
+            document.getElementById('thinkingText').textContent = data.thinking_trace;
+
+            // Display gifts
+            const giftsGrid = document.getElementById('giftsGrid');
+            giftsGrid.innerHTML = '';
+
+            data.recommendations.forEach((gift, index) => {
+                const giftCard = document.createElement('div');
+                giftCard.className = 'gift-card';
+                giftCard.style.animationDelay = `${index * 0.1}s`;
+
+                giftCard.innerHTML = `
+                    <div class="gift-number">${gift.id}</div>
+                    <h3 class="gift-title">${gift.title}</h3>
+                    <p class="gift-description">${gift.description}</p>
+                    <div class="gift-price">${gift.approx_price_inr}</div>
+                    <div class="purchase-links">
+                        <a href="${gift.purchase_links.amazon_in}" target="_blank" class="purchase-btn amazon-btn">
+                            🛒 Amazon
+                        </a>
+                        <a href="${gift.purchase_links.flipkart}" target="_blank" class="purchase-btn flipkart-btn">
+                            🛍️ Flipkart
+                        </a>
+                    </div>
+                `;
+
+                giftsGrid.appendChild(giftCard);
+            });
+
+            // Display pro tip
+            document.getElementById('proTipText').textContent = data.pro_tip;
+
+            // Scroll to results
+            setTimeout(() => {
+                document.getElementById('resultsSection').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 100);
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('giftForm').reset();
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('formSection').style.display = 'block';
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
