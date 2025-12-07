@@ -3,6 +3,6 @@
   "rewrites": [
     { "source": "/", "destination": "/api/index" },
     { "source": "/api/recommend", "destination": "/api/recommend" },
-    { "source": "/favicon.ico", "destination": "/api/favicon.ico" }
+    { "source": "/favicon.ico", "destination": "/api/favicon" }
   ]
 }
