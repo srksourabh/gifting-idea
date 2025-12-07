@@ -17,6 +17,31 @@ GIFT_DATABASE = {
     "kids": ["Educational Toys", "Building Blocks Set", "Art and Craft Kit", "Remote Control Car", "Story Books Set"],
 }
 
+# Emoji icons for each gift type
+GIFT_ICONS = {
+    "Silver Pooja Items": "🪔", "Brass Diya Set": "🪔", "Traditional Silk Saree": "👗",
+    "Kurta Pajama Set": "👔", "Handcrafted Jewelry": "💍", "Silver Coins": "🪙",
+    "Copper Water Bottle": "🍶", "Traditional Sweet Box": "🍬", "Smart Watch": "⌚",
+    "Bluetooth Speaker": "🔊", "Power Bank": "🔋", "Wireless Earbuds": "🎧",
+    "Coffee Maker": "☕", "Air Purifier": "💨", "Electric Kettle": "🫖", "Grooming Kit": "💈",
+    "Customized Photo Frame": "🖼️", "Engraved Pen Set": "🖊️", "Personalized Cushion": "🛋️",
+    "Photo Coffee Mug": "☕", "Custom Name Plate": "🏷️", "Customized Diary": "📔",
+    "Designer Perfume": "🧴", "Premium Watch": "⌚", "Leather Wallet": "👛",
+    "Designer Sunglasses": "🕶️", "Branded Handbag": "👜", "Premium Tea Gift Set": "🍵",
+    "Luxury Chocolate Box": "🍫", "Yoga Mat": "🧘", "Essential Oil Diffuser": "🌸",
+    "Spa Gift Hamper": "🧖", "Fitness Tracker": "📱", "Organic Skincare Set": "🧴",
+    "Meditation Kit": "🧘", "Decorative Diya Set": "🪔", "Rangoli Kit": "🎨",
+    "Festival Sweet Hamper": "🍬", "Pooja Thali Set": "🪔", "Festive Dry Fruit Box": "🥜",
+    "Decorative Toran": "🎊", "Couple Watches": "⌚", "Heart-shaped Jewelry": "💝",
+    "Perfume Gift Set": "🧴", "Love Letter Kit": "💌", "Couple Keychains": "🔑",
+    "Wall Clock": "🕐", "Decorative Showpiece": "🏺", "Table Lamp": "💡",
+    "Bedsheet Set": "🛏️", "Dinner Set": "🍽️", "Indoor Plant with Planter": "🪴",
+    "Tablet": "📱", "Kindle E-reader": "📚", "Smart Home Device": "🏠",
+    "Gaming Accessories": "🎮", "Portable Projector": "📽️", "Educational Toys": "🧩",
+    "Building Blocks Set": "🧱", "Art and Craft Kit": "🎨", "Remote Control Car": "🚗",
+    "Story Books Set": "📚", "Healthy Snack Box": "🥗"
+}
+
 RELATIONSHIPS = {
     "mother": "immediate_family", "father": "immediate_family", "brother": "immediate_family",
     "sister": "immediate_family", "wife": "immediate_family", "husband": "immediate_family",
@@ -53,7 +78,6 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
     rel_type = RELATIONSHIPS.get(relationship.lower(), "general")
     occ_type = OCCASIONS.get(occasion.lower(), "celebration")
 
-    # Select categories based on relationship and vibe
     if rel_type == "immediate_family":
         categories = ["personalized", "luxury", "wellness"]
     elif rel_type == "professional":
@@ -63,7 +87,6 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
     else:
         categories = ["traditional", "modern", "personalized"]
 
-    # Add vibe-specific categories
     vibe_lower = vibe.lower() if vibe else ""
     if "traditional" in vibe_lower:
         categories.insert(0, "traditional")
@@ -74,11 +97,9 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
     if "luxury" in vibe_lower:
         categories.insert(0, "luxury")
 
-    # Add festival-specific
     if occ_type == "festival":
         categories.insert(0, "festive")
 
-    # Age-specific adjustments
     if age_group and age_group.lower() == "child":
         categories = ["kids", "personalized"] + categories
 
@@ -104,18 +125,25 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget):
                 f"Thoughtful present that strengthens your bond"
             ]
 
+            icon = GIFT_ICONS.get(item, "🎁")
+            encoded_item = quote_plus(item)
+
             recommendations.append({
                 "id": i + 1,
                 "title": item,
+                "icon": icon,
                 "description": descriptions[i % len(descriptions)],
                 "approx_price_inr": f"Rs.{price:,}",
                 "purchase_links": {
-                    "amazon_in": f"https://www.amazon.in/s?k={quote_plus(item)}",
-                    "flipkart": f"https://www.flipkart.com/search?q={quote_plus(item)}"
+                    "amazon": f"https://www.amazon.in/s?k={encoded_item}",
+                    "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
+                    "myntra": f"https://www.myntra.com/{encoded_item}",
+                    "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
+                    "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
+                    "meesho": f"https://www.meesho.com/search?q={encoded_item}"
                 }
             })
 
-    # Get pro tip
     pro_tip = PRO_TIPS.get(occasion.lower(), PRO_TIPS.get("professional" if rel_type == "professional" else "default", PRO_TIPS["default"]))
 
     return {
@@ -135,53 +163,59 @@ HTML_PAGE = '''<!DOCTYPE html>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; color: #333; }
+        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #0d9488 0%, #0891b2 50%, #0284c7 100%); min-height: 100vh; padding: 20px; color: #333; }
         .container { max-width: 1200px; margin: 0 auto; }
         .header { text-align: center; color: white; margin-bottom: 40px; animation: fadeInDown 0.8s ease-out; }
         .header h1 { font-size: 3rem; font-weight: 700; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
         .header .subtitle { font-size: 1.2rem; font-weight: 300; opacity: 0.95; }
         .header .emoji { font-size: 3.5rem; display: inline-block; animation: bounce 2s infinite; }
         .main-card { background: white; border-radius: 24px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: fadeInUp 0.8s ease-out; }
-        .form-title { font-size: 1.8rem; color: #667eea; margin-bottom: 30px; text-align: center; font-weight: 600; }
+        .form-title { font-size: 1.8rem; color: #0d9488; margin-bottom: 30px; text-align: center; font-weight: 600; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-weight: 600; margin-bottom: 8px; color: #555; font-size: 0.9rem; }
         .form-group select, .form-group input { padding: 14px 16px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; background: #f8f9fa; }
-        .form-group select:focus, .form-group input:focus { outline: none; border-color: #667eea; background: white; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
-        .submit-btn { width: 100%; padding: 18px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
-        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6); }
+        .form-group select:focus, .form-group input:focus { outline: none; border-color: #0d9488; background: white; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        .submit-btn { width: 100%; padding: 18px; background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(13, 148, 136, 0.4); }
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(13, 148, 136, 0.6); }
         .loading { display: none; text-align: center; padding: 50px; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #0d9488; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
         .results-section { display: none; margin-top: 40px; }
         .results-header { text-align: center; margin-bottom: 25px; }
-        .results-header h2 { font-size: 2rem; color: #667eea; }
-        .thinking-trace { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #667eea; }
-        .thinking-trace h3 { color: #667eea; font-size: 1rem; margin-bottom: 8px; }
+        .results-header h2 { font-size: 2rem; color: #0d9488; }
+        .thinking-trace { background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #0d9488; }
+        .thinking-trace h3 { color: #0d9488; font-size: 1rem; margin-bottom: 8px; }
         .thinking-trace p { color: #666; line-height: 1.6; font-size: 0.95rem; }
-        .gifts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px; }
-        .gift-card { background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border-radius: 16px; padding: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.08); transition: all 0.3s ease; border: 2px solid transparent; }
-        .gift-card:hover { transform: translateY(-5px); box-shadow: 0 12px 35px rgba(102, 126, 234, 0.15); border-color: #667eea; }
-        .gift-number { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 32px; height: 32px; border-radius: 50%; font-weight: 600; margin-bottom: 12px; font-size: 0.9rem; }
-        .gift-title { font-size: 1.25rem; color: #333; margin-bottom: 10px; font-weight: 600; }
+        .gifts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .gift-card { background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%); border-radius: 16px; padding: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.08); transition: all 0.3s ease; border: 2px solid transparent; }
+        .gift-card:hover { transform: translateY(-5px); box-shadow: 0 12px 35px rgba(13, 148, 136, 0.15); border-color: #0d9488; }
+        .gift-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .gift-icon { font-size: 3rem; background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; border-radius: 16px; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15); }
+        .gift-info { flex: 1; }
+        .gift-number { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; width: 24px; height: 24px; border-radius: 50%; font-weight: 600; font-size: 0.75rem; margin-bottom: 5px; }
+        .gift-title { font-size: 1.15rem; color: #333; font-weight: 600; line-height: 1.3; }
         .gift-description { color: #666; margin-bottom: 12px; line-height: 1.5; font-size: 0.9rem; }
-        .gift-price { font-size: 1.6rem; color: #667eea; font-weight: 700; margin-bottom: 15px; }
-        .purchase-links { display: flex; gap: 10px; }
-        .purchase-btn { flex: 1; padding: 12px; border-radius: 8px; text-decoration: none; text-align: center; font-weight: 600; transition: all 0.3s ease; font-size: 0.9rem; color: white; }
+        .gift-price { font-size: 1.5rem; color: #0d9488; font-weight: 700; margin-bottom: 15px; }
+        .purchase-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .purchase-btn { padding: 10px 8px; border-radius: 8px; text-decoration: none; text-align: center; font-weight: 600; transition: all 0.3s ease; font-size: 0.75rem; color: white; }
         .amazon-btn { background: #FF9900; }
-        .amazon-btn:hover { background: #e88b00; }
         .flipkart-btn { background: #2874F0; }
-        .flipkart-btn:hover { background: #1a5dc7; }
-        .pro-tip { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
-        .pro-tip h3 { color: #e65100; font-size: 1.1rem; margin-bottom: 8px; }
-        .pro-tip p { color: #bf360c; line-height: 1.6; }
-        .back-btn { display: block; margin: 0 auto; padding: 12px 40px; background: white; color: #667eea; border: 2px solid #667eea; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; }
-        .back-btn:hover { background: #667eea; color: white; }
-        .error { background: #ffebee; color: #c62828; padding: 15px; border-radius: 10px; margin-top: 15px; display: none; text-align: center; }
+        .myntra-btn { background: #ff3e6c; }
+        .shoppersstop-btn { background: #e4002b; }
+        .blinkit-btn { background: #0c831f; }
+        .meesho-btn { background: #570741; }
+        .purchase-btn:hover { opacity: 0.9; transform: scale(1.02); }
+        .pro-tip { background: linear-gradient(135deg, #fef3c7 0%, #d1fae5 100%); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        .pro-tip h3 { color: #065f46; font-size: 1.1rem; margin-bottom: 8px; }
+        .pro-tip p { color: #047857; line-height: 1.6; }
+        .back-btn { display: block; margin: 0 auto; padding: 12px 40px; background: white; color: #0d9488; border: 2px solid #0d9488; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; }
+        .back-btn:hover { background: #0d9488; color: white; }
+        .error { background: #fef2f2; color: #dc2626; padding: 15px; border-radius: 10px; margin-top: 15px; display: none; text-align: center; }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 768px) { .header h1 { font-size: 2.2rem; } .main-card { padding: 25px; } .form-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .header h1 { font-size: 2.2rem; } .main-card { padding: 25px; } .form-grid { grid-template-columns: 1fr; } .purchase-links { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
 <body>
@@ -301,7 +335,7 @@ HTML_PAGE = '''<!DOCTYPE html>
             </div>
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p style="color: #667eea; font-size: 1.1rem;">Finding the perfect gifts for you...</p>
+                <p style="color: #0d9488; font-size: 1.1rem;">Finding the perfect gifts for you...</p>
             </div>
             <div class="results-section" id="results">
                 <div class="results-header">
@@ -354,7 +388,25 @@ HTML_PAGE = '''<!DOCTYPE html>
             document.getElementById('thinkingText').textContent = data.thinking_trace;
             document.getElementById('proTipText').textContent = data.pro_tip;
             document.getElementById('giftsGrid').innerHTML = data.recommendations.map(g =>
-                '<div class="gift-card"><div class="gift-number">' + g.id + '</div><div class="gift-title">' + g.title + '</div><div class="gift-description">' + g.description + '</div><div class="gift-price">' + g.approx_price_inr + '</div><div class="purchase-links"><a href="' + g.purchase_links.amazon_in + '" target="_blank" class="purchase-btn amazon-btn">🛒 Amazon</a><a href="' + g.purchase_links.flipkart + '" target="_blank" class="purchase-btn flipkart-btn">🛍️ Flipkart</a></div></div>'
+                '<div class="gift-card">' +
+                    '<div class="gift-header">' +
+                        '<div class="gift-icon">' + g.icon + '</div>' +
+                        '<div class="gift-info">' +
+                            '<div class="gift-number">' + g.id + '</div>' +
+                            '<div class="gift-title">' + g.title + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="gift-description">' + g.description + '</div>' +
+                    '<div class="gift-price">' + g.approx_price_inr + '</div>' +
+                    '<div class="purchase-links">' +
+                        '<a href="' + g.purchase_links.amazon + '" target="_blank" class="purchase-btn amazon-btn">Amazon</a>' +
+                        '<a href="' + g.purchase_links.flipkart + '" target="_blank" class="purchase-btn flipkart-btn">Flipkart</a>' +
+                        '<a href="' + g.purchase_links.myntra + '" target="_blank" class="purchase-btn myntra-btn">Myntra</a>' +
+                        '<a href="' + g.purchase_links.shoppersstop + '" target="_blank" class="purchase-btn shoppersstop-btn">Shoppers Stop</a>' +
+                        '<a href="' + g.purchase_links.blinkit + '" target="_blank" class="purchase-btn blinkit-btn">Blinkit</a>' +
+                        '<a href="' + g.purchase_links.meesho + '" target="_blank" class="purchase-btn meesho-btn">Meesho</a>' +
+                    '</div>' +
+                '</div>'
             ).join('');
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
