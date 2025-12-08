@@ -190,6 +190,137 @@ GIFT_TYPE_TAGS = {
     "Doll House Set": "Funky", "Dance Costume Set": "Funky", "Jewelry Making Kit": "Funky"
 }
 
+# Platform availability mapping - which platforms carry which types of products
+PLATFORM_CATEGORIES = {
+    "amazon": ["tech", "modern", "home", "kids", "kids_boys", "kids_girls", "wellness", "luxury", "personalized"],
+    "flipkart": ["tech", "modern", "home", "kids", "kids_boys", "kids_girls", "wellness"],
+    "myntra": ["luxury", "traditional", "personalized", "romantic"],
+    "shoppersstop": ["luxury", "traditional", "personalized"],
+    "fnp": ["personalized", "romantic", "festive", "traditional", "wellness"],
+    "igp": ["personalized", "romantic", "festive", "traditional"],
+    "archies": ["personalized", "romantic", "festive", "kids", "kids_boys", "kids_girls"],
+    "blinkit": ["festive", "home"],
+    "meesho": ["traditional", "home", "kids", "kids_girls"]
+}
+
+# Specific product to platform mapping for more accuracy
+PRODUCT_PLATFORMS = {
+    # Tech products - Amazon, Flipkart only
+    "Smart Watch": ["amazon", "flipkart"],
+    "Bluetooth Speaker": ["amazon", "flipkart"],
+    "Power Bank": ["amazon", "flipkart"],
+    "Wireless Earbuds": ["amazon", "flipkart"],
+    "Tablet": ["amazon", "flipkart"],
+    "Kindle E-reader": ["amazon"],
+    "Smart Home Device": ["amazon", "flipkart"],
+    "Gaming Accessories": ["amazon", "flipkart"],
+    "Portable Projector": ["amazon", "flipkart"],
+    "Fitness Tracker": ["amazon", "flipkart"],
+    # Kitchen/Home appliances
+    "Coffee Maker": ["amazon", "flipkart"],
+    "Air Purifier": ["amazon", "flipkart"],
+    "Electric Kettle": ["amazon", "flipkart"],
+    # Fashion - Myntra, Shoppers Stop
+    "Traditional Silk Saree": ["myntra", "shoppersstop", "amazon"],
+    "Kurta Pajama Set": ["myntra", "shoppersstop", "amazon"],
+    "Designer Sunglasses": ["myntra", "shoppersstop", "amazon"],
+    "Branded Handbag": ["myntra", "shoppersstop", "amazon"],
+    "Leather Wallet": ["myntra", "shoppersstop", "amazon"],
+    "Designer Perfume": ["myntra", "shoppersstop", "amazon", "flipkart"],
+    "Dance Costume Set": ["myntra", "amazon"],
+    # Personalized/Custom gifts - FNP, IGP, Archies
+    "Customized Photo Frame": ["fnp", "igp", "archies", "amazon"],
+    "Engraved Pen Set": ["fnp", "igp", "amazon"],
+    "Personalized Cushion": ["fnp", "igp", "archies", "amazon"],
+    "Photo Coffee Mug": ["fnp", "igp", "archies", "amazon"],
+    "Custom Name Plate": ["fnp", "igp", "amazon"],
+    "Customized Diary": ["fnp", "igp", "archies", "amazon"],
+    # Romantic gifts
+    "Couple Watches": ["fnp", "igp", "amazon", "flipkart"],
+    "Heart-shaped Jewelry": ["fnp", "igp", "archies", "amazon"],
+    "Perfume Gift Set": ["fnp", "igp", "myntra", "amazon"],
+    "Love Letter Kit": ["fnp", "igp", "archies"],
+    "Couple Keychains": ["fnp", "igp", "archies", "amazon"],
+    # Traditional/Festive - FNP, traditional stores
+    "Silver Pooja Items": ["amazon", "flipkart", "fnp"],
+    "Brass Diya Set": ["amazon", "flipkart", "fnp", "igp"],
+    "Handcrafted Jewelry": ["amazon", "myntra", "fnp"],
+    "Silver Coins": ["amazon", "flipkart", "fnp"],
+    "Traditional Sweet Box": ["fnp", "igp", "blinkit"],
+    "Decorative Diya Set": ["amazon", "flipkart", "fnp", "igp"],
+    "Rangoli Kit": ["amazon", "flipkart", "fnp"],
+    "Festival Sweet Hamper": ["fnp", "igp", "blinkit"],
+    "Pooja Thali Set": ["amazon", "flipkart", "fnp", "igp"],
+    "Festive Dry Fruit Box": ["fnp", "igp", "amazon", "blinkit"],
+    "Decorative Toran": ["amazon", "flipkart", "fnp"],
+    # Wellness/Spa
+    "Yoga Mat": ["amazon", "flipkart"],
+    "Essential Oil Diffuser": ["amazon", "flipkart", "fnp"],
+    "Spa Gift Hamper": ["fnp", "igp", "amazon"],
+    "Organic Skincare Set": ["amazon", "myntra", "fnp"],
+    "Meditation Kit": ["amazon", "fnp"],
+    # Home decor
+    "Wall Clock": ["amazon", "flipkart", "shoppersstop"],
+    "Decorative Showpiece": ["amazon", "flipkart", "shoppersstop", "fnp"],
+    "Table Lamp": ["amazon", "flipkart", "shoppersstop"],
+    "Bedsheet Set": ["amazon", "flipkart", "shoppersstop", "meesho"],
+    "Dinner Set": ["amazon", "flipkart", "shoppersstop"],
+    "Indoor Plant with Planter": ["fnp", "amazon", "igp"],
+    "Copper Water Bottle": ["amazon", "flipkart"],
+    "Premium Tea Gift Set": ["amazon", "fnp", "igp"],
+    "Luxury Chocolate Box": ["fnp", "igp", "amazon"],
+    "Grooming Kit": ["amazon", "flipkart", "myntra"],
+    # Kids
+    "Educational Toys": ["amazon", "flipkart", "archies"],
+    "Building Blocks Set": ["amazon", "flipkart"],
+    "Art and Craft Kit": ["amazon", "flipkart", "archies"],
+    "Remote Control Car": ["amazon", "flipkart"],
+    "Story Books Set": ["amazon", "flipkart", "archies"],
+    "Cricket Kit": ["amazon", "flipkart"],
+    "Football": ["amazon", "flipkart"],
+    "Doll House Set": ["amazon", "flipkart"],
+    "Jewelry Making Kit": ["amazon", "flipkart", "archies"],
+    "Premium Watch": ["amazon", "flipkart", "myntra", "shoppersstop"],
+}
+
+def get_purchase_links(item_title, gift_category="modern"):
+    """Generate purchase links only for platforms where the product is likely available."""
+    encoded_item = quote_plus(item_title)
+
+    # All available platforms with their URLs
+    all_platforms = {
+        "amazon": f"https://www.amazon.in/s?k={encoded_item}",
+        "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
+        "myntra": f"https://www.myntra.com/{encoded_item}",
+        "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
+        "fnp": f"https://www.fnp.com/search?q={encoded_item}",
+        "igp": f"https://www.igp.com/search?q={encoded_item}",
+        "archies": f"https://www.archiesonline.com/catalogsearch/result/?q={encoded_item}",
+        "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
+        "meesho": f"https://www.meesho.com/search?q={encoded_item}"
+    }
+
+    # Check if product has specific platform mapping
+    if item_title in PRODUCT_PLATFORMS:
+        available_platforms = PRODUCT_PLATFORMS[item_title]
+    else:
+        # Fallback to category-based platforms
+        available_platforms = []
+        for platform, categories in PLATFORM_CATEGORIES.items():
+            if gift_category in categories:
+                available_platforms.append(platform)
+        # Always include Amazon as fallback
+        if "amazon" not in available_platforms:
+            available_platforms.append("amazon")
+
+    # Build links dict with only available platforms
+    links = {}
+    for platform in available_platforms:
+        if platform in all_platforms:
+            links[platform] = all_platforms[platform]
+
+    return links
+
 GIFT_ICONS = {
     "Silver Pooja Items": "🪔", "Brass Diya Set": "🪔", "Traditional Silk Saree": "👗",
     "Kurta Pajama Set": "👔", "Handcrafted Jewelry": "💍", "Silver Coins": "🪙",
@@ -333,7 +464,6 @@ def get_fallback_recommendations(relationship, occasion, age_group, vibe, budget
             why_applicable = " • ".join(why_reasons[:3])
             gift_type_tag = GIFT_TYPE_TAGS.get(item, "Practical")
             icon = GIFT_ICONS.get(item, "🎁")
-            encoded_item = quote_plus(item)
 
             recommendations.append({
                 "id": len(recommendations) + 1,
@@ -343,14 +473,7 @@ def get_fallback_recommendations(relationship, occasion, age_group, vibe, budget
                 "description": descriptions[len(recommendations) % len(descriptions)],
                 "why_applicable": why_applicable,
                 "approx_price_inr": f"Rs.{price:,}",
-                "purchase_links": {
-                    "amazon": f"https://www.amazon.in/s?k={encoded_item}",
-                    "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
-                    "myntra": f"https://www.myntra.com/{encoded_item}",
-                    "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
-                    "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
-                    "meesho": f"https://www.meesho.com/search?q={encoded_item}"
-                }
+                "purchase_links": get_purchase_links(item, cat)
             })
         attempt += 1
 
@@ -379,29 +502,33 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
 
             for i, gift in enumerate(ai_gifts[:10]):
                 title = gift.get('title', 'Gift')
-                encoded_item = quote_plus(title)
+                gift_type = gift.get('gift_type', 'Practical')
 
                 # Get personalized reason from LLM-2, or use LLM-1's description
                 why_applicable = gift.get('description', '')
                 if personalization and title in personalization:
                     why_applicable = personalization[title]
 
+                # Determine category for smart link filtering
+                gift_category = "modern"  # default
+                if gift_type in ["Traditional"]:
+                    gift_category = "traditional"
+                elif gift_type in ["Romantic"]:
+                    gift_category = "romantic"
+                elif gift_type in ["Luxury"]:
+                    gift_category = "luxury"
+                elif gift_type in ["Funky"]:
+                    gift_category = "personalized"
+
                 recommendations.append({
                     "id": i + 1,
                     "title": title,
                     "icon": gift.get('icon', '🎁'),
-                    "gift_type": gift.get('gift_type', 'Practical'),
+                    "gift_type": gift_type,
                     "description": gift.get('description', f"Perfect gift for {relationship}"),
                     "why_applicable": why_applicable,
                     "approx_price_inr": f"Rs.{gift.get('price', budget):,}",
-                    "purchase_links": {
-                        "amazon": f"https://www.amazon.in/s?k={encoded_item}",
-                        "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
-                        "myntra": f"https://www.myntra.com/{encoded_item}",
-                        "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
-                        "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
-                        "meesho": f"https://www.meesho.com/search?q={encoded_item}"
-                    }
+                    "purchase_links": get_purchase_links(title, gift_category)
                 })
             ai_powered = True
 

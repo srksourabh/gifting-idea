@@ -45,6 +45,112 @@ GIFT_TYPE_TAGS = {
     "Doll House Set": "Funky", "Dance Costume Set": "Funky", "Jewelry Making Kit": "Funky"
 }
 
+# Platform availability mapping
+PLATFORM_CATEGORIES = {
+    "amazon": ["tech", "modern", "home", "kids", "kids_boys", "kids_girls", "wellness", "luxury", "personalized"],
+    "flipkart": ["tech", "modern", "home", "kids", "kids_boys", "kids_girls", "wellness"],
+    "myntra": ["luxury", "traditional", "personalized", "romantic"],
+    "shoppersstop": ["luxury", "traditional", "personalized"],
+    "fnp": ["personalized", "romantic", "festive", "traditional", "wellness"],
+    "igp": ["personalized", "romantic", "festive", "traditional"],
+    "archies": ["personalized", "romantic", "festive", "kids", "kids_boys", "kids_girls"],
+    "blinkit": ["festive", "home"],
+    "meesho": ["traditional", "home", "kids", "kids_girls"]
+}
+
+# Specific product to platform mapping
+PRODUCT_PLATFORMS = {
+    "Smart Watch": ["amazon", "flipkart"], "Bluetooth Speaker": ["amazon", "flipkart"],
+    "Power Bank": ["amazon", "flipkart"], "Wireless Earbuds": ["amazon", "flipkart"],
+    "Tablet": ["amazon", "flipkart"], "Kindle E-reader": ["amazon"],
+    "Smart Home Device": ["amazon", "flipkart"], "Gaming Accessories": ["amazon", "flipkart"],
+    "Portable Projector": ["amazon", "flipkart"], "Fitness Tracker": ["amazon", "flipkart"],
+    "Coffee Maker": ["amazon", "flipkart"], "Air Purifier": ["amazon", "flipkart"],
+    "Electric Kettle": ["amazon", "flipkart"],
+    "Traditional Silk Saree": ["myntra", "shoppersstop", "amazon"],
+    "Kurta Pajama Set": ["myntra", "shoppersstop", "amazon"],
+    "Designer Sunglasses": ["myntra", "shoppersstop", "amazon"],
+    "Branded Handbag": ["myntra", "shoppersstop", "amazon"],
+    "Leather Wallet": ["myntra", "shoppersstop", "amazon"],
+    "Designer Perfume": ["myntra", "shoppersstop", "amazon", "flipkart"],
+    "Dance Costume Set": ["myntra", "amazon"],
+    "Customized Photo Frame": ["fnp", "igp", "archies", "amazon"],
+    "Engraved Pen Set": ["fnp", "igp", "amazon"],
+    "Personalized Cushion": ["fnp", "igp", "archies", "amazon"],
+    "Photo Coffee Mug": ["fnp", "igp", "archies", "amazon"],
+    "Custom Name Plate": ["fnp", "igp", "amazon"],
+    "Customized Diary": ["fnp", "igp", "archies", "amazon"],
+    "Couple Watches": ["fnp", "igp", "amazon", "flipkart"],
+    "Heart-shaped Jewelry": ["fnp", "igp", "archies", "amazon"],
+    "Perfume Gift Set": ["fnp", "igp", "myntra", "amazon"],
+    "Love Letter Kit": ["fnp", "igp", "archies"],
+    "Couple Keychains": ["fnp", "igp", "archies", "amazon"],
+    "Silver Pooja Items": ["amazon", "flipkart", "fnp"],
+    "Brass Diya Set": ["amazon", "flipkart", "fnp", "igp"],
+    "Handcrafted Jewelry": ["amazon", "myntra", "fnp"],
+    "Silver Coins": ["amazon", "flipkart", "fnp"],
+    "Traditional Sweet Box": ["fnp", "igp", "blinkit"],
+    "Decorative Diya Set": ["amazon", "flipkart", "fnp", "igp"],
+    "Rangoli Kit": ["amazon", "flipkart", "fnp"],
+    "Festival Sweet Hamper": ["fnp", "igp", "blinkit"],
+    "Pooja Thali Set": ["amazon", "flipkart", "fnp", "igp"],
+    "Festive Dry Fruit Box": ["fnp", "igp", "amazon", "blinkit"],
+    "Decorative Toran": ["amazon", "flipkart", "fnp"],
+    "Yoga Mat": ["amazon", "flipkart"],
+    "Essential Oil Diffuser": ["amazon", "flipkart", "fnp"],
+    "Spa Gift Hamper": ["fnp", "igp", "amazon"],
+    "Organic Skincare Set": ["amazon", "myntra", "fnp"],
+    "Meditation Kit": ["amazon", "fnp"],
+    "Wall Clock": ["amazon", "flipkart", "shoppersstop"],
+    "Decorative Showpiece": ["amazon", "flipkart", "shoppersstop", "fnp"],
+    "Table Lamp": ["amazon", "flipkart", "shoppersstop"],
+    "Bedsheet Set": ["amazon", "flipkart", "shoppersstop", "meesho"],
+    "Dinner Set": ["amazon", "flipkart", "shoppersstop"],
+    "Indoor Plant with Planter": ["fnp", "amazon", "igp"],
+    "Copper Water Bottle": ["amazon", "flipkart"],
+    "Premium Tea Gift Set": ["amazon", "fnp", "igp"],
+    "Luxury Chocolate Box": ["fnp", "igp", "amazon"],
+    "Grooming Kit": ["amazon", "flipkart", "myntra"],
+    "Educational Toys": ["amazon", "flipkart", "archies"],
+    "Building Blocks Set": ["amazon", "flipkart"],
+    "Art and Craft Kit": ["amazon", "flipkart", "archies"],
+    "Remote Control Car": ["amazon", "flipkart"],
+    "Story Books Set": ["amazon", "flipkart", "archies"],
+    "Cricket Kit": ["amazon", "flipkart"], "Football": ["amazon", "flipkart"],
+    "Doll House Set": ["amazon", "flipkart"],
+    "Jewelry Making Kit": ["amazon", "flipkart", "archies"],
+    "Premium Watch": ["amazon", "flipkart", "myntra", "shoppersstop"],
+}
+
+def get_purchase_links(item_title, gift_category="modern"):
+    """Generate purchase links only for platforms where the product is likely available."""
+    encoded_item = quote_plus(item_title)
+    all_platforms = {
+        "amazon": f"https://www.amazon.in/s?k={encoded_item}",
+        "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
+        "myntra": f"https://www.myntra.com/{encoded_item}",
+        "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
+        "fnp": f"https://www.fnp.com/search?q={encoded_item}",
+        "igp": f"https://www.igp.com/search?q={encoded_item}",
+        "archies": f"https://www.archiesonline.com/catalogsearch/result/?q={encoded_item}",
+        "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
+        "meesho": f"https://www.meesho.com/search?q={encoded_item}"
+    }
+    if item_title in PRODUCT_PLATFORMS:
+        available_platforms = PRODUCT_PLATFORMS[item_title]
+    else:
+        available_platforms = []
+        for platform, categories in PLATFORM_CATEGORIES.items():
+            if gift_category in categories:
+                available_platforms.append(platform)
+        if "amazon" not in available_platforms:
+            available_platforms.append("amazon")
+    links = {}
+    for platform in available_platforms:
+        if platform in all_platforms:
+            links[platform] = all_platforms[platform]
+    return links
+
 # Emoji icons for each gift type
 GIFT_ICONS = {
     "Silver Pooja Items": "🪔", "Brass Diya Set": "🪔", "Traditional Silk Saree": "👗",
@@ -212,7 +318,6 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
             gift_type_tag = GIFT_TYPE_TAGS.get(item, "Practical")
 
             icon = GIFT_ICONS.get(item, "🎁")
-            encoded_item = quote_plus(item)
 
             recommendations.append({
                 "id": len(recommendations) + 1,
@@ -222,14 +327,7 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
                 "description": descriptions[len(recommendations) % len(descriptions)],
                 "why_applicable": why_applicable,
                 "approx_price_inr": f"Rs.{price:,}",
-                "purchase_links": {
-                    "amazon": f"https://www.amazon.in/s?k={encoded_item}",
-                    "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
-                    "myntra": f"https://www.myntra.com/{encoded_item}",
-                    "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
-                    "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
-                    "meesho": f"https://www.meesho.com/search?q={encoded_item}"
-                }
+                "purchase_links": get_purchase_links(item, cat)
             })
         attempt += 1
 
@@ -300,6 +398,9 @@ HTML_PAGE = '''<!DOCTYPE html>
         .shoppersstop-btn { background: #e4002b; }
         .blinkit-btn { background: #0c831f; }
         .meesho-btn { background: #570741; }
+        .fnp-btn { background: #e91e63; }
+        .igp-btn { background: #ff6600; }
+        .archies-btn { background: #8b0000; }
         .purchase-btn:hover { opacity: 0.9; transform: scale(1.02); }
         .pro-tip { background: linear-gradient(135deg, #fef3c7 0%, #d1fae5 100%); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
         .pro-tip h3 { color: #065f46; font-size: 1.1rem; margin-bottom: 8px; }
@@ -551,8 +652,19 @@ HTML_PAGE = '''<!DOCTYPE html>
             document.getElementById('results').style.display = 'block';
             document.getElementById('thinkingText').textContent = data.thinking_trace;
             document.getElementById('proTipText').textContent = data.pro_tip;
+            const platformNames = {
+                amazon: 'Amazon', flipkart: 'Flipkart', myntra: 'Myntra',
+                shoppersstop: 'Shoppers Stop', blinkit: 'Blinkit', meesho: 'Meesho',
+                fnp: 'FNP', igp: 'IGP', archies: 'Archies'
+            };
             document.getElementById('giftsGrid').innerHTML = data.recommendations.map(g => {
                 const tagClass = 'tag-' + (g.gift_type || 'practical').toLowerCase();
+                let linksHtml = '';
+                for (const [platform, url] of Object.entries(g.purchase_links || {})) {
+                    const btnClass = platform + '-btn';
+                    const displayName = platformNames[platform] || platform;
+                    linksHtml += '<a href="' + url + '" target="_blank" class="purchase-btn ' + btnClass + '">' + displayName + '</a>';
+                }
                 return '<div class="gift-card">' +
                     '<span class="gift-type-tag ' + tagClass + '">' + (g.gift_type || 'Practical') + '</span>' +
                     '<div class="gift-header">' +
@@ -568,14 +680,7 @@ HTML_PAGE = '''<!DOCTYPE html>
                         '<div class="gift-why-text">' + g.why_applicable + '</div>' +
                     '</div>' +
                     '<div class="gift-price">' + g.approx_price_inr + '</div>' +
-                    '<div class="purchase-links">' +
-                        '<a href="' + g.purchase_links.amazon + '" target="_blank" class="purchase-btn amazon-btn">Amazon</a>' +
-                        '<a href="' + g.purchase_links.flipkart + '" target="_blank" class="purchase-btn flipkart-btn">Flipkart</a>' +
-                        '<a href="' + g.purchase_links.myntra + '" target="_blank" class="purchase-btn myntra-btn">Myntra</a>' +
-                        '<a href="' + g.purchase_links.shoppersstop + '" target="_blank" class="purchase-btn shoppersstop-btn">Shoppers Stop</a>' +
-                        '<a href="' + g.purchase_links.blinkit + '" target="_blank" class="purchase-btn blinkit-btn">Blinkit</a>' +
-                        '<a href="' + g.purchase_links.meesho + '" target="_blank" class="purchase-btn meesho-btn">Meesho</a>' +
-                    '</div>' +
+                    '<div class="purchase-links">' + linksHtml + '</div>' +
                 '</div>';
             }).join('');
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
