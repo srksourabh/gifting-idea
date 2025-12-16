@@ -802,6 +802,8 @@ HTML_PAGE = '''<!DOCTYPE html>
         .flipkart-btn { background: linear-gradient(135deg, #2874F0 0%, #1a5dc8 100%); }
         .myntra-btn { background: linear-gradient(135deg, #ff3e6c 0%, #e8304f 100%); }
         .meesho-btn { background: linear-gradient(135deg, #570741 0%, #3d0530 100%); }
+        .shoppersstop-btn { background: linear-gradient(135deg, #000000 0%, #333333 100%); }
+        .blinkit-btn { background: linear-gradient(135deg, #f8cb46 0%, #e5b93d 100%); color: #000; }
         .purchase-btn:hover { opacity: 0.9; transform: scale(1.03); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         
         .pro-tip { 
@@ -1413,6 +1415,12 @@ HTML_PAGE = '''<!DOCTYPE html>
                 }
                 if (g.purchase_links.myntra) {
                     linksHtml += '<a href="' + g.purchase_links.myntra + '" target="_blank" class="purchase-btn myntra-btn">Myntra</a>';
+                }
+                if (g.purchase_links.shoppersstop) {
+                    linksHtml += '<a href="' + g.purchase_links.shoppersstop + '" target="_blank" class="purchase-btn shoppersstop-btn">Shoppers Stop</a>';
+                }
+                if (g.purchase_links.blinkit) {
+                    linksHtml += '<a href="' + g.purchase_links.blinkit + '" target="_blank" class="purchase-btn blinkit-btn">Blinkit</a>';
                 }
                 if (g.purchase_links.meesho) {
                     linksHtml += '<a href="' + g.purchase_links.meesho + '" target="_blank" class="purchase-btn meesho-btn">Meesho</a>';
