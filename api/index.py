@@ -128,8 +128,6 @@ def get_purchase_links(item, budget):
     # Meesho - works for most items
     links["meesho"] = f"https://www.meesho.com/search?q={encoded_item}"
     
-    # Note: Removed Blinkit (grocery only) and Shoppers Stop (inconsistent search)
-    
     return links
 
 
@@ -177,7 +175,6 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
 
     while len(recommendations) < 10 and attempt < 50:
         cat = categories[attempt % len(categories)]
-        # Filter items by selected gift types
         items = [x for x in GIFT_DATABASE.get(cat, GIFT_DATABASE["modern"])
                  if x not in used and GIFT_TYPE_TAGS.get(x, "Practical") in gift_types]
         if not items:
@@ -197,7 +194,6 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
                 f"Thoughtful present that strengthens your bond"
             ]
 
-            # Generate personalized reason for this gift
             why_reasons = []
             if rel_type == "immediate_family":
                 why_reasons.append(f"Your {relationship} deserves something special that shows deep appreciation")
@@ -234,16 +230,12 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
             elif "wellness" in vibe_lower:
                 why_reasons.append("Promotes health and well-being")
 
-            # Add personalized note if provided
             if notes and notes.strip():
                 why_reasons.append(f"Considering your note: {notes.strip()[:50]}")
 
             why_applicable = " • ".join(why_reasons[:3])
             gift_type_tag = GIFT_TYPE_TAGS.get(item, "Practical")
-
             icon = GIFT_ICONS.get(item, "🎁")
-            
-            # Get smart purchase links
             purchase_links = get_purchase_links(item, budget)
 
             recommendations.append({
@@ -280,6 +272,40 @@ HTML_PAGE = '''<!DOCTYPE html>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --accent-primary: #0d9488;
+            --accent-secondary: #0891b2;
+            --accent-gradient: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+            --shadow-lg: 0 25px 50px rgba(0,0,0,0.15);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.3);
+        }
+        
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.95);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #334155;
+            --accent-primary: #14b8a6;
+            --accent-secondary: #22d3ee;
+            --accent-gradient: linear-gradient(135deg, #14b8a6 0%, #22d3ee 100%);
+            --shadow-lg: 0 25px 50px rgba(0,0,0,0.5);
+            --glass-bg: rgba(30, 41, 59, 0.85);
+            --glass-border: rgba(71, 85, 105, 0.5);
+        }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body { 
@@ -289,7 +315,12 @@ HTML_PAGE = '''<!DOCTYPE html>
             animation: gradientShift 15s ease infinite;
             min-height: 100vh; 
             padding: 20px; 
-            color: #333; 
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        
+        [data-theme="dark"] body {
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #312e81, #4c1d95);
         }
         
         @keyframes gradientShift {
@@ -300,84 +331,345 @@ HTML_PAGE = '''<!DOCTYPE html>
         
         .container { max-width: 1200px; margin: 0 auto; }
         
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+        }
+        .theme-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+        .theme-toggle .icon {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+        .theme-toggle:hover .icon {
+            transform: rotate(20deg);
+        }
+        
         .header { text-align: center; color: white; margin-bottom: 40px; animation: fadeInDown 0.8s ease-out; }
         .header h1 { font-size: 3rem; font-weight: 700; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
         .header .subtitle { font-size: 1.2rem; font-weight: 300; opacity: 0.95; }
         .header .emoji { font-size: 3.5rem; display: inline-block; animation: bounce 2s infinite; }
         
         .main-card { 
-            background: rgba(255, 255, 255, 0.95); 
+            background: var(--glass-bg);
             backdrop-filter: blur(20px);
             border-radius: 24px; 
             padding: 40px; 
-            box-shadow: 0 25px 80px rgba(0,0,0,0.3); 
+            box-shadow: var(--shadow-lg);
             animation: fadeInUp 0.8s ease-out;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid var(--glass-border);
         }
         
-        .form-title { font-size: 1.8rem; color: #0d9488; margin-bottom: 30px; text-align: center; font-weight: 600; }
+        .form-title { 
+            font-size: 1.8rem; 
+            color: var(--accent-primary); 
+            margin-bottom: 30px; 
+            text-align: center; 
+            font-weight: 600; 
+        }
+        
+        /* Step Progress Indicator */
+        .step-progress {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 35px;
+            gap: 8px;
+        }
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--border-color);
+            transition: all 0.3s ease;
+        }
+        .step-dot.active {
+            background: var(--accent-gradient);
+            transform: scale(1.3);
+            box-shadow: 0 0 10px rgba(13, 148, 136, 0.5);
+        }
+        .step-dot.completed {
+            background: var(--accent-primary);
+        }
+        .step-line {
+            width: 40px;
+            height: 3px;
+            background: var(--border-color);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        .step-line.completed {
+            background: var(--accent-primary);
+        }
+        
+        /* Form Steps */
+        .form-step {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .form-step.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-title {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .step-subtitle {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+        
+        /* Category Cards for Step 1 */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .category-card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .category-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 10px 30px rgba(13, 148, 136, 0.15);
+        }
+        .category-card.selected {
+            background: var(--accent-gradient);
+            border-color: transparent;
+            color: white;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(13, 148, 136, 0.3);
+        }
+        .category-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .category-card .label {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        /* Occasion Pills for Step 2 */
+        .occasion-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        .occasion-pill {
+            padding: 12px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 50px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+        .occasion-pill:hover {
+            border-color: var(--accent-primary);
+            background: rgba(13, 148, 136, 0.1);
+        }
+        .occasion-pill.selected {
+            background: var(--accent-gradient);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3);
+        }
+        
+        /* Relationship Cards */
+        .relationship-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .relationship-card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .relationship-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-3px);
+        }
+        .relationship-card.selected {
+            background: var(--accent-gradient);
+            border-color: transparent;
+            color: white;
+        }
+        .relationship-card.suggested {
+            border-color: var(--accent-primary);
+            background: rgba(13, 148, 136, 0.1);
+        }
+        .relationship-card.suggested::after {
+            content: '★';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #fbbf24;
+            color: white;
+            font-size: 0.6rem;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .relationship-card {
+            position: relative;
+        }
+        .relationship-card .emoji {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .relationship-card .name {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
         
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
         
         .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-weight: 600; margin-bottom: 8px; color: #555; font-size: 0.9rem; }
+        .form-group label { font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem; }
         .form-group select, .form-group input { 
             padding: 14px 16px; 
-            border: 2px solid #e0e0e0; 
+            border: 2px solid var(--border-color); 
             border-radius: 12px; 
             font-size: 1rem; 
             font-family: 'Inter', sans-serif; 
             transition: all 0.3s ease; 
-            background: #f8f9fa; 
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
         .form-group select:focus, .form-group input:focus { 
             outline: none; 
-            border-color: #0d9488; 
-            background: white; 
+            border-color: var(--accent-primary); 
+            background: var(--bg-primary); 
             box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15); 
         }
         
-        /* Gender field styling when auto-set */
         .form-group.gender-auto-set select {
-            background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
-            border-color: #0d9488;
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.1) 0%, rgba(8, 145, 178, 0.1) 100%);
+            border-color: var(--accent-primary);
         }
         .form-group.gender-auto-set::after {
             content: '✓ Auto-detected';
             font-size: 0.75rem;
-            color: #0d9488;
+            color: var(--accent-primary);
             margin-top: 4px;
             font-weight: 500;
         }
         
-        /* Suggested relationship highlight */
-        .form-group select option.suggested {
-            background: #f0fdfa;
+        .form-group textarea { 
+            padding: 14px 16px; 
+            border: 2px solid var(--border-color); 
+            border-radius: 12px; 
+            font-size: 1rem; 
+            font-family: 'Inter', sans-serif; 
+            transition: all 0.3s ease; 
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            resize: vertical; 
+            min-height: 80px; 
+        }
+        .form-group textarea:focus { 
+            outline: none; 
+            border-color: var(--accent-primary); 
+            background: var(--bg-primary); 
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15); 
+        }
+        
+        .full-width { grid-column: 1 / -1; }
+        
+        /* Navigation Buttons */
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        .nav-btn {
+            padding: 14px 35px;
+            border-radius: 12px;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
         }
-        
-        .occasion-hint {
-            display: none;
-            background: linear-gradient(135deg, #fef3c7 0%, #d1fae5 100%);
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-top: 10px;
-            font-size: 0.85rem;
-            color: #065f46;
-            border-left: 4px solid #10b981;
-            animation: fadeIn 0.3s ease;
+        .nav-btn.secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
         }
-        .occasion-hint.visible { display: block; }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
+        .nav-btn.secondary:hover {
+            border-color: var(--accent-primary);
+            background: rgba(13, 148, 136, 0.1);
+        }
+        .nav-btn.primary {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3);
+        }
+        .nav-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4);
+        }
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
         }
         
         .submit-btn { 
             width: 100%; 
             padding: 18px; 
-            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); 
+            background: var(--accent-gradient);
             color: white; 
             border: none; 
             border-radius: 12px; 
@@ -391,28 +683,56 @@ HTML_PAGE = '''<!DOCTYPE html>
             transform: translateY(-3px) scale(1.01); 
             box-shadow: 0 8px 30px rgba(13, 148, 136, 0.5); 
         }
-        .submit-btn:active {
-            transform: translateY(-1px) scale(0.99);
+        
+        .gift-types-section { margin-bottom: 25px; }
+        .gift-types-label { font-weight: 600; margin-bottom: 12px; color: var(--text-secondary); font-size: 0.9rem; display: block; }
+        .gift-types-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+        .gift-type-checkbox { display: none; }
+        .gift-type-label { 
+            padding: 10px 18px; 
+            border: 2px solid var(--border-color); 
+            border-radius: 25px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            font-size: 0.9rem; 
+            font-weight: 500; 
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+        .gift-type-checkbox:checked + .gift-type-label { 
+            background: var(--accent-gradient);
+            color: white; 
+            border-color: transparent; 
+            box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3); 
+        }
+        .gift-type-label:hover { 
+            border-color: var(--accent-primary); 
         }
         
         .loading { display: none; text-align: center; padding: 50px; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #0d9488; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        .spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--accent-primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
         
         .results-section { display: none; margin-top: 40px; }
         .results-header { text-align: center; margin-bottom: 25px; }
-        .results-header h2 { font-size: 2rem; color: #0d9488; }
+        .results-header h2 { font-size: 2rem; color: var(--accent-primary); }
         
-        .thinking-trace { background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #0d9488; }
-        .thinking-trace h3 { color: #0d9488; font-size: 1rem; margin-bottom: 8px; }
-        .thinking-trace p { color: #666; line-height: 1.6; font-size: 0.95rem; }
+        .thinking-trace { 
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.1) 0%, rgba(8, 145, 178, 0.1) 100%); 
+            padding: 20px; 
+            border-radius: 12px; 
+            margin-bottom: 25px; 
+            border-left: 4px solid var(--accent-primary); 
+        }
+        .thinking-trace h3 { color: var(--accent-primary); font-size: 1rem; margin-bottom: 8px; }
+        .thinking-trace p { color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; }
         
         .gifts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; margin-bottom: 25px; }
         
         .gift-card { 
-            background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%); 
+            background: var(--bg-card);
             border-radius: 20px; 
             padding: 28px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.08); 
+            box-shadow: var(--shadow-md);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             border: 2px solid transparent; 
             position: relative;
@@ -420,13 +740,13 @@ HTML_PAGE = '''<!DOCTYPE html>
         .gift-card:hover { 
             transform: translateY(-8px) scale(1.02); 
             box-shadow: 0 20px 60px rgba(13, 148, 136, 0.2); 
-            border-color: #0d9488; 
+            border-color: var(--accent-primary); 
         }
         
         .gift-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
         .gift-icon { 
             font-size: 3rem; 
-            background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); 
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(8, 145, 178, 0.15) 100%); 
             width: 75px; 
             height: 75px; 
             display: flex; 
@@ -440,7 +760,7 @@ HTML_PAGE = '''<!DOCTYPE html>
             display: inline-flex; 
             align-items: center; 
             justify-content: center; 
-            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); 
+            background: var(--accent-gradient);
             color: white; 
             width: 26px; 
             height: 26px; 
@@ -449,15 +769,21 @@ HTML_PAGE = '''<!DOCTYPE html>
             font-size: 0.8rem; 
             margin-bottom: 5px; 
         }
-        .gift-title { font-size: 1.2rem; color: #333; font-weight: 600; line-height: 1.3; }
+        .gift-title { font-size: 1.2rem; color: var(--text-primary); font-weight: 600; line-height: 1.3; }
         
-        .gift-description { color: #666; margin-bottom: 12px; line-height: 1.5; font-size: 0.9rem; }
+        .gift-description { color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; font-size: 0.9rem; }
         
-        .gift-why { background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%); padding: 14px; border-radius: 10px; margin-bottom: 14px; border-left: 3px solid #0d9488; }
-        .gift-why-label { font-weight: 600; color: #0d9488; font-size: 0.8rem; margin-bottom: 4px; }
-        .gift-why-text { color: #065f46; font-size: 0.85rem; line-height: 1.5; }
+        .gift-why { 
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(8, 145, 178, 0.08) 100%); 
+            padding: 14px; 
+            border-radius: 10px; 
+            margin-bottom: 14px; 
+            border-left: 3px solid var(--accent-primary); 
+        }
+        .gift-why-label { font-weight: 600; color: var(--accent-primary); font-size: 0.8rem; margin-bottom: 4px; }
+        .gift-why-text { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; }
         
-        .gift-price { font-size: 1.6rem; color: #0d9488; font-weight: 700; margin-bottom: 16px; }
+        .gift-price { font-size: 1.6rem; color: var(--accent-primary); font-weight: 700; margin-bottom: 16px; }
         
         .purchase-links { display: flex; flex-wrap: wrap; gap: 8px; }
         .purchase-btn { 
@@ -478,54 +804,87 @@ HTML_PAGE = '''<!DOCTYPE html>
         .meesho-btn { background: linear-gradient(135deg, #570741 0%, #3d0530 100%); }
         .purchase-btn:hover { opacity: 0.9; transform: scale(1.03); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         
-        .pro-tip { background: linear-gradient(135deg, #fef3c7 0%, #d1fae5 100%); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
-        .pro-tip h3 { color: #065f46; font-size: 1.1rem; margin-bottom: 8px; }
-        .pro-tip p { color: #047857; line-height: 1.6; }
+        .pro-tip { 
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%); 
+            padding: 20px; 
+            border-radius: 12px; 
+            text-align: center; 
+            margin-bottom: 20px; 
+        }
+        .pro-tip h3 { color: var(--accent-primary); font-size: 1.1rem; margin-bottom: 8px; }
+        .pro-tip p { color: var(--text-secondary); line-height: 1.6; }
         
         .button-group { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
-        .back-btn { padding: 14px 45px; background: white; color: #0d9488; border: 2px solid #0d9488; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; }
-        .back-btn:hover { background: #0d9488; color: white; transform: translateY(-2px); }
-        .edit-btn { padding: 14px 45px; background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3); }
-        .edit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(13, 148, 136, 0.5); }
-        
-        .error { background: #fef2f2; color: #dc2626; padding: 15px; border-radius: 10px; margin-top: 15px; display: none; text-align: center; }
-        
-        .form-group textarea { padding: 14px 16px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; font-family: 'Inter', sans-serif; transition: all 0.3s ease; background: #f8f9fa; resize: vertical; min-height: 80px; }
-        .form-group textarea:focus { outline: none; border-color: #0d9488; background: white; box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15); }
-        
-        .full-width { grid-column: 1 / -1; }
-        
-        .gift-types-section { margin-bottom: 25px; }
-        .gift-types-label { font-weight: 600; margin-bottom: 12px; color: #555; font-size: 0.9rem; display: block; }
-        .gift-types-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-        .gift-type-checkbox { display: none; }
-        .gift-type-label { 
-            padding: 10px 18px; 
-            border: 2px solid #e0e0e0; 
-            border-radius: 25px; 
+        .back-btn { 
+            padding: 14px 45px; 
+            background: var(--bg-secondary); 
+            color: var(--accent-primary); 
+            border: 2px solid var(--accent-primary); 
+            border-radius: 12px; 
+            font-weight: 600; 
             cursor: pointer; 
             transition: all 0.3s ease; 
-            font-size: 0.9rem; 
-            font-weight: 500; 
-            background: #f8f9fa; 
-            color: #666; 
+            font-size: 1rem; 
         }
-        .gift-type-checkbox:checked + .gift-type-label { 
-            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); 
+        .back-btn:hover { 
+            background: var(--accent-primary); 
             color: white; 
-            border-color: #0d9488; 
+            transform: translateY(-2px); 
+        }
+        .edit-btn { 
+            padding: 14px 45px; 
+            background: var(--accent-gradient);
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            font-size: 1rem; 
             box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3); 
         }
-        .gift-type-label:hover { border-color: #0d9488; background: #f0fdfa; }
-        .gift-type-checkbox:checked + .gift-type-label:hover { background: linear-gradient(135deg, #0f766e 0%, #0e7490 100%); }
+        .edit-btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.5); 
+        }
         
-        .gift-type-tag { position: absolute; top: 14px; right: 14px; padding: 5px 14px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .error { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 15px; border-radius: 10px; margin-top: 15px; display: none; text-align: center; }
+        
+        .gift-type-tag { 
+            position: absolute; 
+            top: 14px; 
+            right: 14px; 
+            padding: 5px 14px; 
+            border-radius: 20px; 
+            font-size: 0.7rem; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
         .tag-formal { background: linear-gradient(135deg, #1e40af, #1d4ed8); color: white; }
         .tag-funky { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
         .tag-romantic { background: linear-gradient(135deg, #db2777, #ec4899); color: white; }
         .tag-practical { background: linear-gradient(135deg, #059669, #10b981); color: white; }
         .tag-traditional { background: linear-gradient(135deg, #d97706, #f59e0b); color: white; }
         .tag-luxury { background: linear-gradient(135deg, #7c3aed, #8b5cf6); color: white; }
+        
+        /* Confetti Animation */
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+        }
         
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
@@ -539,10 +898,17 @@ HTML_PAGE = '''<!DOCTYPE html>
             .purchase-links { flex-direction: column; }
             .purchase-btn { width: 100%; }
             .gifts-grid { grid-template-columns: 1fr; }
+            .category-grid { grid-template-columns: repeat(2, 1fr); }
+            .relationship-grid { grid-template-columns: repeat(3, 1fr); }
+            .theme-toggle { top: 10px; right: 10px; }
         }
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+        <span class="icon" id="themeIcon">🌙</span>
+    </button>
+    
     <div class="container">
         <div class="header">
             <div class="emoji">🎁</div>
@@ -551,147 +917,153 @@ HTML_PAGE = '''<!DOCTYPE html>
         </div>
         <div class="main-card">
             <div id="formSection">
-                <h2 class="form-title">Tell Us About Your Gift Recipient</h2>
+                <h2 class="form-title">Let's Find the Perfect Gift!</h2>
+                
+                <!-- Step Progress -->
+                <div class="step-progress">
+                    <div class="step-dot active" id="dot1"></div>
+                    <div class="step-line" id="line1"></div>
+                    <div class="step-dot" id="dot2"></div>
+                    <div class="step-line" id="line2"></div>
+                    <div class="step-dot" id="dot3"></div>
+                    <div class="step-line" id="line3"></div>
+                    <div class="step-dot" id="dot4"></div>
+                </div>
+                
                 <form id="giftForm">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>👥 Relationship</label>
-                            <select id="relationship" required>
-                                <option value="">Select Relationship</option>
-                                <optgroup label="Immediate Family">
-                                    <option value="Mother" data-gender="Female">Mother</option>
-                                    <option value="Father" data-gender="Male">Father</option>
-                                    <option value="Brother" data-gender="Male">Brother</option>
-                                    <option value="Sister" data-gender="Female">Sister</option>
-                                    <option value="Wife" data-gender="Female">Wife</option>
-                                    <option value="Husband" data-gender="Male">Husband</option>
-                                    <option value="Son" data-gender="Male">Son</option>
-                                    <option value="Daughter" data-gender="Female">Daughter</option>
-                                    <option value="Grandparent" data-gender="">Grandparent</option>
-                                    <option value="Grandchild" data-gender="">Grandchild</option>
-                                </optgroup>
-                                <optgroup label="Extended Family">
-                                    <option value="Uncle" data-gender="Male">Uncle</option>
-                                    <option value="Aunt" data-gender="Female">Aunt</option>
-                                    <option value="Cousin" data-gender="">Cousin</option>
-                                    <option value="Nephew" data-gender="Male">Nephew</option>
-                                    <option value="Niece" data-gender="Female">Niece</option>
-                                    <option value="Saali" data-gender="Female">Saali (Sister-in-law)</option>
-                                </optgroup>
-                                <optgroup label="Professional">
-                                    <option value="Boss" data-gender="">Boss</option>
-                                    <option value="Colleague" data-gender="">Colleague</option>
-                                </optgroup>
-                                <optgroup label="Social & Romantic">
-                                    <option value="Friend" data-gender="">Friend</option>
-                                    <option value="Boyfriend" data-gender="Male">Boyfriend</option>
-                                    <option value="Girlfriend" data-gender="Female">Girlfriend</option>
-                                </optgroup>
-                            </select>
-                            <div id="occasionHint" class="occasion-hint"></div>
+                    <!-- Step 1: Occasion Category -->
+                    <div class="form-step active" id="step1">
+                        <h3 class="step-title">What's the occasion?</h3>
+                        <p class="step-subtitle">Select a category to see relevant occasions</p>
+                        
+                        <div class="category-grid">
+                            <div class="category-card" data-category="festivals" onclick="selectCategory(this)">
+                                <span class="icon">🪔</span>
+                                <span class="label">Festivals</span>
+                            </div>
+                            <div class="category-card" data-category="milestones" onclick="selectCategory(this)">
+                                <span class="icon">🎉</span>
+                                <span class="label">Life Events</span>
+                            </div>
+                            <div class="category-card" data-category="special" onclick="selectCategory(this)">
+                                <span class="icon">💝</span>
+                                <span class="label">Special Days</span>
+                            </div>
+                            <div class="category-card" data-category="religious" onclick="selectCategory(this)">
+                                <span class="icon">🙏</span>
+                                <span class="label">Religious</span>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>🎉 Occasion</label>
-                            <select id="occasion" required>
-                                <option value="">Select Occasion</option>
-                                <optgroup label="Major Festivals">
-                                    <option value="Diwali">Diwali</option>
-                                    <option value="Holi">Holi</option>
-                                    <option value="Raksha Bandhan">Raksha Bandhan</option>
-                                    <option value="Durga Puja">Durga Puja</option>
-                                    <option value="Ganesh Chaturthi">Ganesh Chaturthi</option>
-                                    <option value="Navratri">Navratri</option>
-                                    <option value="Eid">Eid</option>
-                                    <option value="Christmas">Christmas</option>
-                                    <option value="Pongal">Pongal</option>
-                                    <option value="Onam">Onam</option>
-                                    <option value="Karva Chauth">Karva Chauth</option>
-                                </optgroup>
-                                <optgroup label="Life Milestones">
-                                    <option value="Birthday">Birthday</option>
-                                    <option value="Anniversary">Anniversary</option>
-                                    <option value="Wedding">Wedding</option>
-                                    <option value="Graduation">Graduation</option>
-                                    <option value="Promotion">Promotion</option>
-                                    <option value="Baby Shower">Baby Shower</option>
-                                    <option value="House Warming">House Warming</option>
-                                    <option value="Retirement">Retirement</option>
-                                </optgroup>
-                                <optgroup label="Special Days">
-                                    <option value="New Year">New Year</option>
-                                    <option value="Valentine's Day">Valentine's Day</option>
-                                    <option value="Mother's Day">Mother's Day</option>
-                                    <option value="Father's Day">Father's Day</option>
-                                </optgroup>
-                            </select>
-                            <div id="relationshipHint" class="occasion-hint"></div>
+                        
+                        <div class="occasion-pills" id="occasionPills" style="display: none;">
+                            <!-- Dynamically populated -->
                         </div>
-                        <div class="form-group">
-                            <label>🎂 Age Group</label>
-                            <select id="ageGroup" required>
-                                <option value="">Select Age Group</option>
-                                <option value="Child">Child (0-12)</option>
-                                <option value="Teenager">Teenager (13-19)</option>
-                                <option value="Adult">Adult (20-59)</option>
-                                <option value="Senior">Senior (60+)</option>
-                            </select>
-                        </div>
-                        <div class="form-group" id="genderGroup">
-                            <label>👤 Gender</label>
-                            <select id="gender">
-                                <option value="">Select Gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>✨ Vibe/Style</label>
-                            <select id="vibe" required>
-                                <option value="">Select Vibe</option>
-                                <option value="Traditional">Traditional/Ethnic</option>
-                                <option value="Modern">Modern/Contemporary</option>
-                                <option value="Personalized">Personalized</option>
-                                <option value="Luxury">Luxury/Premium</option>
-                                <option value="Wellness">Wellness-focused</option>
-                                <option value="Tech">Tech-savvy</option>
-                                <option value="Romantic">Romantic</option>
-                                <option value="Fun">Fun/Quirky</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>💰 Budget (INR)</label>
-                            <input type="number" id="budget" placeholder="Enter amount (e.g., 2000)" min="100" max="1000000" required>
-                        </div>
-                        <div class="form-group full-width">
-                            <label>📝 Anything you wish to add?</label>
-                            <textarea id="notes" placeholder="e.g., She loves to paint, He enjoys cooking, They are into fitness..."></textarea>
+                        
+                        <input type="hidden" id="occasion" name="occasion" required>
+                        
+                        <div class="nav-buttons">
+                            <button type="button" class="nav-btn primary" onclick="nextStep()" id="step1Next" disabled>Next →</button>
                         </div>
                     </div>
-                    <div class="gift-types-section">
-                        <span class="gift-types-label">🎯 Gift Types (click to deselect)</span>
-                        <div class="gift-types-grid">
-                            <input type="checkbox" id="type-formal" class="gift-type-checkbox" checked>
-                            <label for="type-formal" class="gift-type-label">💼 Formal</label>
-                            <input type="checkbox" id="type-funky" class="gift-type-checkbox" checked>
-                            <label for="type-funky" class="gift-type-label">🎉 Funky</label>
-                            <input type="checkbox" id="type-romantic" class="gift-type-checkbox" checked>
-                            <label for="type-romantic" class="gift-type-label">💕 Romantic</label>
-                            <input type="checkbox" id="type-practical" class="gift-type-checkbox" checked>
-                            <label for="type-practical" class="gift-type-label">🔧 Practical</label>
-                            <input type="checkbox" id="type-traditional" class="gift-type-checkbox" checked>
-                            <label for="type-traditional" class="gift-type-label">🪔 Traditional</label>
-                            <input type="checkbox" id="type-luxury" class="gift-type-checkbox" checked>
-                            <label for="type-luxury" class="gift-type-label">💎 Luxury</label>
+                    
+                    <!-- Step 2: Relationship -->
+                    <div class="form-step" id="step2">
+                        <h3 class="step-title">Who is the gift for?</h3>
+                        <p class="step-subtitle" id="relationshipSubtitle">Select your relationship with the recipient</p>
+                        
+                        <div class="relationship-grid" id="relationshipGrid">
+                            <!-- Dynamically populated based on occasion -->
+                        </div>
+                        
+                        <input type="hidden" id="relationship" name="relationship" required>
+                        <input type="hidden" id="gender" name="gender">
+                        
+                        <div class="nav-buttons">
+                            <button type="button" class="nav-btn secondary" onclick="prevStep()">← Back</button>
+                            <button type="button" class="nav-btn primary" onclick="nextStep()" id="step2Next" disabled>Next →</button>
                         </div>
                     </div>
-                    <button type="submit" class="submit-btn">✨ Find Perfect Gifts</button>
+                    
+                    <!-- Step 3: Details -->
+                    <div class="form-step" id="step3">
+                        <h3 class="step-title">A few more details...</h3>
+                        <p class="step-subtitle">Help us personalize your recommendations</p>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>🎂 Age Group</label>
+                                <select id="ageGroup" required>
+                                    <option value="">Select Age Group</option>
+                                    <option value="Child">Child (0-12)</option>
+                                    <option value="Teenager">Teenager (13-19)</option>
+                                    <option value="Adult">Adult (20-59)</option>
+                                    <option value="Senior">Senior (60+)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>✨ Vibe/Style</label>
+                                <select id="vibe" required>
+                                    <option value="">Select Vibe</option>
+                                    <option value="Traditional">Traditional/Ethnic</option>
+                                    <option value="Modern">Modern/Contemporary</option>
+                                    <option value="Personalized">Personalized</option>
+                                    <option value="Luxury">Luxury/Premium</option>
+                                    <option value="Wellness">Wellness-focused</option>
+                                    <option value="Tech">Tech-savvy</option>
+                                    <option value="Romantic">Romantic</option>
+                                    <option value="Fun">Fun/Quirky</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>💰 Budget (INR)</label>
+                                <input type="number" id="budget" placeholder="e.g., 2000" min="100" max="1000000" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label>📝 Anything special about them?</label>
+                                <textarea id="notes" placeholder="e.g., She loves painting, He's a coffee enthusiast, They're into fitness..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons">
+                            <button type="button" class="nav-btn secondary" onclick="prevStep()">← Back</button>
+                            <button type="button" class="nav-btn primary" onclick="nextStep()" id="step3Next">Next →</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Gift Types & Submit -->
+                    <div class="form-step" id="step4">
+                        <h3 class="step-title">Almost there! 🎯</h3>
+                        <p class="step-subtitle">Select gift types you'd like to see</p>
+                        
+                        <div class="gift-types-section">
+                            <div class="gift-types-grid">
+                                <input type="checkbox" id="type-formal" class="gift-type-checkbox" checked>
+                                <label for="type-formal" class="gift-type-label">💼 Formal</label>
+                                <input type="checkbox" id="type-funky" class="gift-type-checkbox" checked>
+                                <label for="type-funky" class="gift-type-label">🎉 Funky</label>
+                                <input type="checkbox" id="type-romantic" class="gift-type-checkbox" checked>
+                                <label for="type-romantic" class="gift-type-label">💕 Romantic</label>
+                                <input type="checkbox" id="type-practical" class="gift-type-checkbox" checked>
+                                <label for="type-practical" class="gift-type-label">🔧 Practical</label>
+                                <input type="checkbox" id="type-traditional" class="gift-type-checkbox" checked>
+                                <label for="type-traditional" class="gift-type-label">🪔 Traditional</label>
+                                <input type="checkbox" id="type-luxury" class="gift-type-checkbox" checked>
+                                <label for="type-luxury" class="gift-type-label">💎 Luxury</label>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons" style="flex-direction: column; gap: 15px;">
+                            <button type="submit" class="submit-btn">✨ Find Perfect Gifts</button>
+                            <button type="button" class="nav-btn secondary" onclick="prevStep()" style="width: 100%;">← Back</button>
+                        </div>
+                    </div>
                 </form>
                 <div class="error" id="error"></div>
             </div>
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p style="color: #0d9488; font-size: 1.1rem;">🔮 Finding perfect gifts for you...</p>
-                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">Analyzing preferences and cultural context</p>
+                <p style="color: var(--accent-primary); font-size: 1.1rem;">🔮 Finding perfect gifts for you...</p>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">Analyzing preferences and cultural context</p>
             </div>
             <div class="results-section" id="results">
                 <div class="results-header">
@@ -713,84 +1085,244 @@ HTML_PAGE = '''<!DOCTYPE html>
             </div>
         </div>
     </div>
+    
+    <div class="confetti" id="confetti"></div>
+    
     <script>
-        // Relationship to Gender mapping (null = show gender picker)
-        const RELATIONSHIP_GENDER = {
-            'Mother': 'Female', 'Father': 'Male', 'Brother': 'Male', 'Sister': 'Female',
-            'Wife': 'Female', 'Husband': 'Male', 'Son': 'Male', 'Daughter': 'Female',
-            'Uncle': 'Male', 'Aunt': 'Female', 'Nephew': 'Male', 'Niece': 'Female',
-            'Boyfriend': 'Male', 'Girlfriend': 'Female', 'Saali': 'Female',
-            'Grandparent': null, 'Grandchild': null, 'Cousin': null,
-            'Boss': null, 'Colleague': null, 'Friend': null
+        // Theme Management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            document.getElementById('themeIcon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+        
+        // Load saved theme
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeIcon').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        })();
+        
+        // Step Management
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        // Data
+        const OCCASION_CATEGORIES = {
+            festivals: [
+                { value: 'Diwali', label: '🪔 Diwali' },
+                { value: 'Holi', label: '🎨 Holi' },
+                { value: 'Raksha Bandhan', label: '🧵 Raksha Bandhan' },
+                { value: 'Durga Puja', label: '🙏 Durga Puja' },
+                { value: 'Ganesh Chaturthi', label: '🐘 Ganesh Chaturthi' },
+                { value: 'Navratri', label: '💃 Navratri' },
+                { value: 'Karva Chauth', label: '🌙 Karva Chauth' },
+                { value: 'Pongal', label: '🌾 Pongal' },
+                { value: 'Onam', label: '🛶 Onam' }
+            ],
+            milestones: [
+                { value: 'Birthday', label: '🎂 Birthday' },
+                { value: 'Anniversary', label: '💑 Anniversary' },
+                { value: 'Wedding', label: '💒 Wedding' },
+                { value: 'Graduation', label: '🎓 Graduation' },
+                { value: 'Promotion', label: '📈 Promotion' },
+                { value: 'Baby Shower', label: '👶 Baby Shower' },
+                { value: 'House Warming', label: '🏠 House Warming' },
+                { value: 'Retirement', label: '🌅 Retirement' }
+            ],
+            special: [
+                { value: "Valentine's Day", label: '💕 Valentine\'s Day' },
+                { value: "Mother's Day", label: '👩 Mother\'s Day' },
+                { value: "Father's Day", label: '👨 Father\'s Day' },
+                { value: 'New Year', label: '🎆 New Year' }
+            ],
+            religious: [
+                { value: 'Eid', label: '☪️ Eid' },
+                { value: 'Christmas', label: '🎄 Christmas' }
+            ]
         };
-
-        // Occasion to suggested relationships mapping
-        const OCCASION_RELATIONSHIPS = {
+        
+        const RELATIONSHIPS = {
+            immediate: [
+                { value: 'Mother', label: 'Mother', emoji: '👩', gender: 'Female' },
+                { value: 'Father', label: 'Father', emoji: '👨', gender: 'Male' },
+                { value: 'Brother', label: 'Brother', emoji: '👦', gender: 'Male' },
+                { value: 'Sister', label: 'Sister', emoji: '👧', gender: 'Female' },
+                { value: 'Wife', label: 'Wife', emoji: '👰', gender: 'Female' },
+                { value: 'Husband', label: 'Husband', emoji: '🤵', gender: 'Male' },
+                { value: 'Son', label: 'Son', emoji: '👦', gender: 'Male' },
+                { value: 'Daughter', label: 'Daughter', emoji: '👧', gender: 'Female' },
+                { value: 'Grandparent', label: 'Grandparent', emoji: '👴', gender: '' },
+                { value: 'Grandchild', label: 'Grandchild', emoji: '👶', gender: '' }
+            ],
+            extended: [
+                { value: 'Uncle', label: 'Uncle', emoji: '👨', gender: 'Male' },
+                { value: 'Aunt', label: 'Aunt', emoji: '👩', gender: 'Female' },
+                { value: 'Cousin', label: 'Cousin', emoji: '🧑', gender: '' },
+                { value: 'Nephew', label: 'Nephew', emoji: '👦', gender: 'Male' },
+                { value: 'Niece', label: 'Niece', emoji: '👧', gender: 'Female' },
+                { value: 'Saali', label: 'Saali', emoji: '👩', gender: 'Female' }
+            ],
+            professional: [
+                { value: 'Boss', label: 'Boss', emoji: '💼', gender: '' },
+                { value: 'Colleague', label: 'Colleague', emoji: '🤝', gender: '' }
+            ],
+            social: [
+                { value: 'Friend', label: 'Friend', emoji: '🧑‍🤝‍🧑', gender: '' },
+                { value: 'Boyfriend', label: 'Boyfriend', emoji: '💑', gender: 'Male' },
+                { value: 'Girlfriend', label: 'Girlfriend', emoji: '💑', gender: 'Female' }
+            ]
+        };
+        
+        const OCCASION_SUGGESTIONS = {
             'Raksha Bandhan': ['Brother', 'Sister'],
             "Valentine's Day": ['Boyfriend', 'Girlfriend', 'Husband', 'Wife'],
             "Mother's Day": ['Mother'],
             "Father's Day": ['Father'],
             'Karva Chauth': ['Husband', 'Wife'],
-            'Anniversary': ['Husband', 'Wife', 'Boyfriend', 'Girlfriend'],
-            'Baby Shower': ['Sister', 'Friend', 'Cousin', 'Daughter']
+            'Anniversary': ['Husband', 'Wife', 'Boyfriend', 'Girlfriend']
         };
-
-        // Auto-set gender when relationship changes
-        document.getElementById('relationship').addEventListener('change', function() {
-            const genderSelect = document.getElementById('gender');
-            const genderGroup = document.getElementById('genderGroup');
-            const selectedOption = this.options[this.selectedIndex];
-            const fixedGender = selectedOption.getAttribute('data-gender');
+        
+        let selectedCategory = '';
+        let selectedOccasion = '';
+        let selectedRelationship = '';
+        let selectedGender = '';
+        
+        function selectCategory(element) {
+            // Remove previous selection
+            document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
             
-            if (fixedGender) {
-                genderSelect.value = fixedGender;
-                genderGroup.classList.add('gender-auto-set');
+            selectedCategory = element.dataset.category;
+            
+            // Show occasions
+            const pillsContainer = document.getElementById('occasionPills');
+            const occasions = OCCASION_CATEGORIES[selectedCategory] || [];
+            
+            pillsContainer.innerHTML = occasions.map(o => 
+                `<div class="occasion-pill" data-value="${o.value}" onclick="selectOccasion(this)">${o.label}</div>`
+            ).join('');
+            
+            pillsContainer.style.display = 'flex';
+            selectedOccasion = '';
+            document.getElementById('step1Next').disabled = true;
+        }
+        
+        function selectOccasion(element) {
+            document.querySelectorAll('.occasion-pill').forEach(p => p.classList.remove('selected'));
+            element.classList.add('selected');
+            
+            selectedOccasion = element.dataset.value;
+            document.getElementById('occasion').value = selectedOccasion;
+            document.getElementById('step1Next').disabled = false;
+        }
+        
+        function populateRelationships() {
+            const grid = document.getElementById('relationshipGrid');
+            const suggestions = OCCASION_SUGGESTIONS[selectedOccasion] || [];
+            
+            let html = '';
+            const allRelationships = [
+                ...RELATIONSHIPS.immediate,
+                ...RELATIONSHIPS.extended,
+                ...RELATIONSHIPS.professional,
+                ...RELATIONSHIPS.social
+            ];
+            
+            // Sort: suggested first
+            const sorted = [...allRelationships].sort((a, b) => {
+                const aIsSuggested = suggestions.includes(a.value);
+                const bIsSuggested = suggestions.includes(b.value);
+                if (aIsSuggested && !bIsSuggested) return -1;
+                if (!aIsSuggested && bIsSuggested) return 1;
+                return 0;
+            });
+            
+            html = sorted.map(r => {
+                const isSuggested = suggestions.includes(r.value);
+                return `<div class="relationship-card ${isSuggested ? 'suggested' : ''}" 
+                            data-value="${r.value}" 
+                            data-gender="${r.gender}"
+                            onclick="selectRelationship(this)">
+                    <span class="emoji">${r.emoji}</span>
+                    <span class="name">${r.label}</span>
+                </div>`;
+            }).join('');
+            
+            grid.innerHTML = html;
+            
+            // Update subtitle
+            if (suggestions.length > 0) {
+                document.getElementById('relationshipSubtitle').innerHTML = 
+                    `<span style="color: var(--accent-primary);">★ Suggested for ${selectedOccasion}:</span> ${suggestions.join(', ')}`;
             } else {
-                genderSelect.value = '';
-                genderGroup.classList.remove('gender-auto-set');
-            }
-            
-            // Update occasion hint
-            updateOccasionHint();
-        });
-
-        // Show relationship suggestions when occasion changes
-        document.getElementById('occasion').addEventListener('change', function() {
-            const hintDiv = document.getElementById('relationshipHint');
-            const suggested = OCCASION_RELATIONSHIPS[this.value];
-            
-            if (suggested && suggested.length > 0) {
-                hintDiv.innerHTML = '💡 <strong>Suggested:</strong> ' + suggested.join(', ');
-                hintDiv.classList.add('visible');
-            } else {
-                hintDiv.classList.remove('visible');
-            }
-        });
-
-        function updateOccasionHint() {
-            const relationship = document.getElementById('relationship').value;
-            const hintDiv = document.getElementById('occasionHint');
-            
-            // Show occasion suggestions based on relationship
-            const suggestions = {
-                'Brother': ['Raksha Bandhan', 'Birthday'],
-                'Sister': ['Raksha Bandhan', 'Birthday'],
-                'Mother': ["Mother's Day", 'Birthday', 'Diwali'],
-                'Father': ["Father's Day", 'Birthday', 'Diwali'],
-                'Husband': ["Valentine's Day", 'Anniversary', 'Karva Chauth'],
-                'Wife': ["Valentine's Day", 'Anniversary', 'Karva Chauth'],
-                'Boyfriend': ["Valentine's Day", 'Birthday'],
-                'Girlfriend': ["Valentine's Day", 'Birthday']
-            };
-            
-            if (suggestions[relationship]) {
-                hintDiv.innerHTML = '💡 <strong>Popular occasions:</strong> ' + suggestions[relationship].join(', ');
-                hintDiv.classList.add('visible');
-            } else {
-                hintDiv.classList.remove('visible');
+                document.getElementById('relationshipSubtitle').textContent = 'Select your relationship with the recipient';
             }
         }
-
+        
+        function selectRelationship(element) {
+            document.querySelectorAll('.relationship-card').forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
+            
+            selectedRelationship = element.dataset.value;
+            selectedGender = element.dataset.gender;
+            
+            document.getElementById('relationship').value = selectedRelationship;
+            document.getElementById('gender').value = selectedGender;
+            document.getElementById('step2Next').disabled = false;
+        }
+        
+        function updateProgress() {
+            for (let i = 1; i <= totalSteps; i++) {
+                const dot = document.getElementById(`dot${i}`);
+                const line = document.getElementById(`line${i}`);
+                
+                dot.classList.remove('active', 'completed');
+                if (i < currentStep) {
+                    dot.classList.add('completed');
+                } else if (i === currentStep) {
+                    dot.classList.add('active');
+                }
+                
+                if (line) {
+                    line.classList.remove('completed');
+                    if (i < currentStep) {
+                        line.classList.add('completed');
+                    }
+                }
+            }
+        }
+        
+        function showStep(step) {
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            document.getElementById(`step${step}`).classList.add('active');
+            updateProgress();
+        }
+        
+        function nextStep() {
+            if (currentStep === 1 && !selectedOccasion) return;
+            if (currentStep === 2 && !selectedRelationship) return;
+            
+            if (currentStep === 1) {
+                populateRelationships();
+            }
+            
+            if (currentStep < totalSteps) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+        
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        }
+        
         function getSelectedGiftTypes() {
             const types = [];
             if (document.getElementById('type-formal').checked) types.push('Formal');
@@ -801,7 +1333,37 @@ HTML_PAGE = '''<!DOCTYPE html>
             if (document.getElementById('type-luxury').checked) types.push('Luxury');
             return types.length > 0 ? types : ['Formal', 'Funky', 'Romantic', 'Practical', 'Traditional', 'Luxury'];
         }
-
+        
+        // Confetti effect
+        function createConfetti() {
+            const container = document.getElementById('confetti');
+            container.innerHTML = '';
+            const colors = ['#0d9488', '#0891b2', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b'];
+            
+            for (let i = 0; i < 100; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+                piece.style.animation = `confettiFall ${2 + Math.random() * 2}s ease-out forwards`;
+                piece.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(piece);
+            }
+            
+            setTimeout(() => container.innerHTML = '', 4000);
+        }
+        
+        // Add confetti animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes confettiFall {
+                0% { opacity: 1; transform: translateY(-100vh) rotate(0deg); }
+                100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+            }
+        `;
+        document.head.appendChild(style);
+        
         document.getElementById('giftForm').onsubmit = async (e) => {
             e.preventDefault();
             const data = {
@@ -825,6 +1387,7 @@ HTML_PAGE = '''<!DOCTYPE html>
                 });
                 if (!res.ok) throw new Error('Failed');
                 showResults(await res.json());
+                createConfetti();
             } catch (err) {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('formSection').style.display = 'block';
@@ -841,7 +1404,6 @@ HTML_PAGE = '''<!DOCTYPE html>
             document.getElementById('giftsGrid').innerHTML = data.recommendations.map(g => {
                 const tagClass = 'tag-' + (g.gift_type || 'practical').toLowerCase();
                 
-                // Build purchase links dynamically (only show available ones)
                 let linksHtml = '';
                 if (g.purchase_links.amazon) {
                     linksHtml += '<a href="' + g.purchase_links.amazon + '" target="_blank" class="purchase-btn amazon-btn">Amazon</a>';
@@ -880,17 +1442,31 @@ HTML_PAGE = '''<!DOCTYPE html>
         function reset() {
             document.getElementById('giftForm').reset();
             document.querySelectorAll('.gift-type-checkbox').forEach(cb => cb.checked = true);
+            document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.occasion-pill').forEach(p => p.classList.remove('selected'));
+            document.querySelectorAll('.relationship-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById('occasionPills').style.display = 'none';
             document.getElementById('results').style.display = 'none';
             document.getElementById('formSection').style.display = 'block';
-            document.getElementById('genderGroup').classList.remove('gender-auto-set');
-            document.getElementById('occasionHint').classList.remove('visible');
-            document.getElementById('relationshipHint').classList.remove('visible');
+            
+            selectedCategory = '';
+            selectedOccasion = '';
+            selectedRelationship = '';
+            selectedGender = '';
+            currentStep = 1;
+            showStep(1);
+            
+            document.getElementById('step1Next').disabled = true;
+            document.getElementById('step2Next').disabled = true;
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function editRequest() {
             document.getElementById('results').style.display = 'none';
             document.getElementById('formSection').style.display = 'block';
+            currentStep = 1;
+            showStep(1);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
