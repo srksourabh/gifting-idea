@@ -48,35 +48,53 @@ def get_ai_recommendations(relationship, occasion, age_group, vibe, budget, gend
 
     gender_text = f", gender: {gender}" if gender else ""
     notes_text = f"\nSpecial notes from user: {notes}" if notes else ""
-    types_text = f"\nPreferred gift types: {', '.join(gift_types)}" if gift_types else ""
 
-    prompt = f"""You are an expert Indian gift consultant. Generate exactly 10 unique gift recommendations.
+    # Build preference hints from gift_types but don't restrict
+    style_hints = ""
+    if gift_types and len(gift_types) < 6:
+        style_hints = f"\nUser prefers these styles: {', '.join(gift_types)} (but feel free to suggest others if they fit better)"
+
+    prompt = f"""You are a creative Indian gift consultant who stays updated with the latest trends, viral products, and what's popular right now in {occasion} gifting.
 
 Context:
 - Recipient: {relationship}
 - Occasion: {occasion}
 - Age Group: {age_group}{gender_text}
-- Style/Vibe: {vibe}
-- Budget: Rs.{budget:,} INR{notes_text}{types_text}
+- Style/Vibe they like: {vibe}
+- Budget: Rs.{budget:,} INR{notes_text}{style_hints}
+
+Generate exactly 10 UNIQUE and CREATIVE gift recommendations. Think about:
+- What's trending right now in India for this occasion
+- Popular brands and products that are currently in demand
+- Unique experiential gifts (subscriptions, experiences, classes)
+- Personalized/customizable options
+- Tech gadgets that are currently popular
+- Artisanal and handcrafted items from Indian brands
+- Wellness and self-care products that are trending
+- What would genuinely surprise and delight this person
+
+IMPORTANT:
+- Be CREATIVE and SPECIFIC - don't suggest generic items like "Watch" or "Perfume", suggest specific types like "Noise ColorFit Pro 4 Smartwatch" or "Forest Essentials Sandalwood Gift Set"
+- Mix different categories - don't repeat similar items
+- Consider what's actually popular and available in India RIGHT NOW
+- Each gift should feel thoughtful and personalized to this specific person
 
 For each gift, provide in this EXACT JSON format (no markdown, just pure JSON array):
 [
   {{
-    "title": "Gift Name",
+    "title": "Specific Gift Name",
     "gift_type": "Formal|Funky|Romantic|Practical|Traditional|Luxury",
-    "description": "Brief description of why this is perfect",
+    "description": "Why this specific gift is perfect for them - be personal and specific",
     "price": 1500,
     "icon": "emoji"
   }}
 ]
 
 Requirements:
-- All gifts must be available in India
-- Prices should be realistic and within budget range (70%-110% of budget)
-- Consider Indian cultural context and traditions
-- If it's for a child, suggest age-appropriate gifts
-- Match the gift_type to one of: Formal, Funky, Romantic, Practical, Traditional, Luxury
-- Use appropriate emojis as icons
+- All gifts must be easily purchasable in India
+- Prices should be realistic and within budget range (60%-120% of budget)
+- Make each suggestion UNIQUE - no two gifts should be from the same category
+- Be specific with product names/types, not generic
 
 Return ONLY the JSON array, no other text."""
 
@@ -106,20 +124,21 @@ def get_ai_personalization(gifts, relationship, occasion, age_group, gender, not
 
     gift_titles = [g.get('title', '') for g in gifts[:10]]
     gender_text = f", {gender}" if gender else ""
-    notes_text = f"\nUser's note: {notes}" if notes else ""
+    notes_text = f"\nUser's note about them: {notes}" if notes else ""
 
-    prompt = f"""You are a gift psychology expert. For each gift below, explain WHY it's perfect for this specific person.
+    prompt = f"""You are a thoughtful gift advisor. For each gift below, write a SHORT, PERSONAL reason why it's perfect for this specific person. Make it feel like advice from a friend, not a sales pitch.
 
 Recipient: {relationship} ({age_group}{gender_text})
 Occasion: {occasion}{notes_text}
 
-Gifts to analyze:
+Gifts:
 {json.dumps(gift_titles, indent=2)}
 
-For each gift, provide a personalized reason (2-3 bullet points joined with " • ") explaining:
-1. Why this gift suits their relationship
-2. Why it's appropriate for the occasion
-3. Any personal touch based on the notes (if provided)
+For each gift, write 2-3 short, punchy reasons joined with " • ". Be specific to their situation:
+- Reference their relationship naturally ("Your {relationship.lower()} will love...")
+- Mention something specific about the occasion
+- If notes provided, connect to their interests/personality
+- Keep it warm and personal, not generic
 
 Return as JSON object with gift titles as keys:
 {{
