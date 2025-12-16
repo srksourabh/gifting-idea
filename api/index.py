@@ -19,7 +19,7 @@ GIFT_DATABASE = {
     "kids_girls": ["Art and Craft Kit", "Doll House Set", "Story Books Set", "Educational Toys", "Dance Costume Set", "Jewelry Making Kit"],
 }
 
-# Gift type classification (formal, funky, romantic, practical, traditional, luxury)
+# Gift type classification
 GIFT_TYPE_TAGS = {
     "Silver Pooja Items": "Traditional", "Brass Diya Set": "Traditional", "Traditional Silk Saree": "Traditional",
     "Kurta Pajama Set": "Formal", "Handcrafted Jewelry": "Traditional", "Silver Coins": "Formal",
@@ -71,6 +71,9 @@ GIFT_ICONS = {
     "Doll House Set": "🏠", "Dance Costume Set": "💃", "Jewelry Making Kit": "💎"
 }
 
+# Fashion/lifestyle items that work on Myntra
+FASHION_ITEMS = ["saree", "kurta", "jewelry", "watch", "sunglasses", "handbag", "wallet", "perfume", "grooming", "skincare"]
+
 RELATIONSHIPS = {
     "mother": "immediate_family", "father": "immediate_family", "brother": "immediate_family",
     "sister": "immediate_family", "wife": "immediate_family", "husband": "immediate_family",
@@ -101,6 +104,33 @@ PRO_TIPS = {
     "professional": "Keep professional gifts neutral and practical. Avoid overly personal items.",
     "default": "Present with both hands as a sign of respect. Include a personalized message."
 }
+
+
+def get_purchase_links(item, budget):
+    """Generate working e-commerce links with price filters"""
+    encoded_item = quote_plus(item)
+    min_price = int(budget * 0.5)
+    max_price = int(budget * 1.2)
+    
+    links = {}
+    
+    # Amazon India - with price filter
+    links["amazon"] = f"https://www.amazon.in/s?k={encoded_item}&rh=p_36%3A{min_price}00-{max_price}00"
+    
+    # Flipkart - with price filter  
+    links["flipkart"] = f"https://www.flipkart.com/search?q={encoded_item}&p%5B%5D=facets.price_range.from%3D{min_price}&p%5B%5D=facets.price_range.to%3D{max_price}"
+    
+    # Myntra - ONLY for fashion/lifestyle items
+    item_lower = item.lower()
+    if any(f in item_lower for f in FASHION_ITEMS):
+        links["myntra"] = f"https://www.myntra.com/{encoded_item.replace('+', '-').lower()}"
+    
+    # Meesho - works for most items
+    links["meesho"] = f"https://www.meesho.com/search?q={encoded_item}"
+    
+    # Note: Removed Blinkit (grocery only) and Shoppers Stop (inconsistent search)
+    
+    return links
 
 
 def get_recommendations(relationship, occasion, age_group, vibe, budget, gender="", notes="", gift_types=None):
@@ -212,7 +242,9 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
             gift_type_tag = GIFT_TYPE_TAGS.get(item, "Practical")
 
             icon = GIFT_ICONS.get(item, "🎁")
-            encoded_item = quote_plus(item)
+            
+            # Get smart purchase links
+            purchase_links = get_purchase_links(item, budget)
 
             recommendations.append({
                 "id": len(recommendations) + 1,
@@ -221,15 +253,8 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
                 "gift_type": gift_type_tag,
                 "description": descriptions[len(recommendations) % len(descriptions)],
                 "why_applicable": why_applicable,
-                "approx_price_inr": f"Rs.{price:,}",
-                "purchase_links": {
-                    "amazon": f"https://www.amazon.in/s?k={encoded_item}",
-                    "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
-                    "myntra": f"https://www.myntra.com/{encoded_item}",
-                    "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
-                    "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
-                    "meesho": f"https://www.meesho.com/search?q={encoded_item}"
-                }
+                "approx_price_inr": f"₹{price:,}",
+                "purchase_links": purchase_links
             })
         attempt += 1
 
@@ -240,7 +265,7 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
     types_text = f", filtering by: {', '.join(gift_types)}" if len(gift_types) < 6 else ""
 
     return {
-        "thinking_trace": f"Analyzing gift for {relationship} on {occasion}. Considering {rel_type} relationship type, {occ_type} occasion, {age_group} age group{gender_text}, {vibe} style preference, and Rs.{budget:,} budget{notes_text}{types_text}.",
+        "thinking_trace": f"Analyzing gift for {relationship} on {occasion}. Considering {rel_type} relationship type, {occ_type} occasion, {age_group} age group{gender_text}, {vibe} style preference, and ₹{budget:,} budget{notes_text}{types_text}.",
         "recommendations": recommendations,
         "pro_tip": pro_tip
     }
@@ -253,87 +278,268 @@ HTML_PAGE = '''<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GiftingGenie - Your Personal Gifting Concierge</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #0d9488 0%, #0891b2 50%, #0284c7 100%); min-height: 100vh; padding: 20px; color: #333; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(-45deg, #0d9488, #0891b2, #6366f1, #8b5cf6);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh; 
+            padding: 20px; 
+            color: #333; 
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
         .container { max-width: 1200px; margin: 0 auto; }
+        
         .header { text-align: center; color: white; margin-bottom: 40px; animation: fadeInDown 0.8s ease-out; }
         .header h1 { font-size: 3rem; font-weight: 700; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
         .header .subtitle { font-size: 1.2rem; font-weight: 300; opacity: 0.95; }
         .header .emoji { font-size: 3.5rem; display: inline-block; animation: bounce 2s infinite; }
-        .main-card { background: white; border-radius: 24px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: fadeInUp 0.8s ease-out; }
+        
+        .main-card { 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(20px);
+            border-radius: 24px; 
+            padding: 40px; 
+            box-shadow: 0 25px 80px rgba(0,0,0,0.3); 
+            animation: fadeInUp 0.8s ease-out;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
         .form-title { font-size: 1.8rem; color: #0d9488; margin-bottom: 30px; text-align: center; font-weight: 600; }
+        
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-weight: 600; margin-bottom: 8px; color: #555; font-size: 0.9rem; }
-        .form-group select, .form-group input { padding: 14px 16px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; background: #f8f9fa; }
-        .form-group select:focus, .form-group input:focus { outline: none; border-color: #0d9488; background: white; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
-        .submit-btn { width: 100%; padding: 18px; background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(13, 148, 136, 0.4); }
-        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(13, 148, 136, 0.6); }
+        .form-group select, .form-group input { 
+            padding: 14px 16px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 12px; 
+            font-size: 1rem; 
+            font-family: 'Inter', sans-serif; 
+            transition: all 0.3s ease; 
+            background: #f8f9fa; 
+        }
+        .form-group select:focus, .form-group input:focus { 
+            outline: none; 
+            border-color: #0d9488; 
+            background: white; 
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15); 
+        }
+        
+        /* Gender field styling when auto-set */
+        .form-group.gender-auto-set select {
+            background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+            border-color: #0d9488;
+        }
+        .form-group.gender-auto-set::after {
+            content: '✓ Auto-detected';
+            font-size: 0.75rem;
+            color: #0d9488;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        
+        /* Suggested relationship highlight */
+        .form-group select option.suggested {
+            background: #f0fdfa;
+            font-weight: 600;
+        }
+        
+        .occasion-hint {
+            display: none;
+            background: linear-gradient(135deg, #fef3c7 0%, #d1fae5 100%);
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+            animation: fadeIn 0.3s ease;
+        }
+        .occasion-hint.visible { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .submit-btn { 
+            width: 100%; 
+            padding: 18px; 
+            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 1.2rem; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 20px rgba(13, 148, 136, 0.4); 
+        }
+        .submit-btn:hover { 
+            transform: translateY(-3px) scale(1.01); 
+            box-shadow: 0 8px 30px rgba(13, 148, 136, 0.5); 
+        }
+        .submit-btn:active {
+            transform: translateY(-1px) scale(0.99);
+        }
+        
         .loading { display: none; text-align: center; padding: 50px; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #0d9488; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        
         .results-section { display: none; margin-top: 40px; }
         .results-header { text-align: center; margin-bottom: 25px; }
         .results-header h2 { font-size: 2rem; color: #0d9488; }
+        
         .thinking-trace { background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #0d9488; }
         .thinking-trace h3 { color: #0d9488; font-size: 1rem; margin-bottom: 8px; }
         .thinking-trace p { color: #666; line-height: 1.6; font-size: 0.95rem; }
-        .gifts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 25px; }
-        .gift-card { background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%); border-radius: 16px; padding: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.08); transition: all 0.3s ease; border: 2px solid transparent; }
-        .gift-card:hover { transform: translateY(-5px); box-shadow: 0 12px 35px rgba(13, 148, 136, 0.15); border-color: #0d9488; }
+        
+        .gifts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; margin-bottom: 25px; }
+        
+        .gift-card { 
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%); 
+            border-radius: 20px; 
+            padding: 28px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08); 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            border: 2px solid transparent; 
+            position: relative;
+        }
+        .gift-card:hover { 
+            transform: translateY(-8px) scale(1.02); 
+            box-shadow: 0 20px 60px rgba(13, 148, 136, 0.2); 
+            border-color: #0d9488; 
+        }
+        
         .gift-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
-        .gift-icon { font-size: 3rem; background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; border-radius: 16px; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15); }
+        .gift-icon { 
+            font-size: 3rem; 
+            background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); 
+            width: 75px; 
+            height: 75px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 18px; 
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.15); 
+        }
         .gift-info { flex: 1; }
-        .gift-number { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; width: 24px; height: 24px; border-radius: 50%; font-weight: 600; font-size: 0.75rem; margin-bottom: 5px; }
-        .gift-title { font-size: 1.15rem; color: #333; font-weight: 600; line-height: 1.3; }
+        .gift-number { 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); 
+            color: white; 
+            width: 26px; 
+            height: 26px; 
+            border-radius: 50%; 
+            font-weight: 600; 
+            font-size: 0.8rem; 
+            margin-bottom: 5px; 
+        }
+        .gift-title { font-size: 1.2rem; color: #333; font-weight: 600; line-height: 1.3; }
+        
         .gift-description { color: #666; margin-bottom: 12px; line-height: 1.5; font-size: 0.9rem; }
-        .gift-why { background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #0d9488; }
+        
+        .gift-why { background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%); padding: 14px; border-radius: 10px; margin-bottom: 14px; border-left: 3px solid #0d9488; }
         .gift-why-label { font-weight: 600; color: #0d9488; font-size: 0.8rem; margin-bottom: 4px; }
-        .gift-why-text { color: #065f46; font-size: 0.85rem; line-height: 1.4; }
-        .gift-price { font-size: 1.5rem; color: #0d9488; font-weight: 700; margin-bottom: 15px; }
-        .purchase-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .purchase-btn { padding: 10px 8px; border-radius: 8px; text-decoration: none; text-align: center; font-weight: 600; transition: all 0.3s ease; font-size: 0.75rem; color: white; }
-        .amazon-btn { background: #FF9900; }
-        .flipkart-btn { background: #2874F0; }
-        .myntra-btn { background: #ff3e6c; }
-        .shoppersstop-btn { background: #e4002b; }
-        .blinkit-btn { background: #0c831f; }
-        .meesho-btn { background: #570741; }
-        .purchase-btn:hover { opacity: 0.9; transform: scale(1.02); }
+        .gift-why-text { color: #065f46; font-size: 0.85rem; line-height: 1.5; }
+        
+        .gift-price { font-size: 1.6rem; color: #0d9488; font-weight: 700; margin-bottom: 16px; }
+        
+        .purchase-links { display: flex; flex-wrap: wrap; gap: 8px; }
+        .purchase-btn { 
+            padding: 10px 16px; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            text-align: center; 
+            font-weight: 600; 
+            transition: all 0.3s ease; 
+            font-size: 0.8rem; 
+            color: white; 
+            flex: 1;
+            min-width: 80px;
+        }
+        .amazon-btn { background: linear-gradient(135deg, #FF9900 0%, #FF6600 100%); }
+        .flipkart-btn { background: linear-gradient(135deg, #2874F0 0%, #1a5dc8 100%); }
+        .myntra-btn { background: linear-gradient(135deg, #ff3e6c 0%, #e8304f 100%); }
+        .meesho-btn { background: linear-gradient(135deg, #570741 0%, #3d0530 100%); }
+        .purchase-btn:hover { opacity: 0.9; transform: scale(1.03); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        
         .pro-tip { background: linear-gradient(135deg, #fef3c7 0%, #d1fae5 100%); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
         .pro-tip h3 { color: #065f46; font-size: 1.1rem; margin-bottom: 8px; }
         .pro-tip p { color: #047857; line-height: 1.6; }
+        
         .button-group { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
-        .back-btn { padding: 12px 40px; background: white; color: #0d9488; border: 2px solid #0d9488; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; }
-        .back-btn:hover { background: #0d9488; color: white; }
-        .edit-btn { padding: 12px 40px; background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3); }
+        .back-btn { padding: 14px 45px; background: white; color: #0d9488; border: 2px solid #0d9488; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; }
+        .back-btn:hover { background: #0d9488; color: white; transform: translateY(-2px); }
+        .edit-btn { padding: 14px 45px; background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3); }
         .edit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(13, 148, 136, 0.5); }
+        
         .error { background: #fef2f2; color: #dc2626; padding: 15px; border-radius: 10px; margin-top: 15px; display: none; text-align: center; }
-        .form-group textarea { padding: 14px 16px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; background: #f8f9fa; resize: vertical; min-height: 80px; }
-        .form-group textarea:focus { outline: none; border-color: #0d9488; background: white; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        
+        .form-group textarea { padding: 14px 16px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; font-family: 'Inter', sans-serif; transition: all 0.3s ease; background: #f8f9fa; resize: vertical; min-height: 80px; }
+        .form-group textarea:focus { outline: none; border-color: #0d9488; background: white; box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15); }
+        
         .full-width { grid-column: 1 / -1; }
+        
         .gift-types-section { margin-bottom: 25px; }
         .gift-types-label { font-weight: 600; margin-bottom: 12px; color: #555; font-size: 0.9rem; display: block; }
         .gift-types-grid { display: flex; flex-wrap: wrap; gap: 10px; }
         .gift-type-checkbox { display: none; }
-        .gift-type-label { padding: 10px 18px; border: 2px solid #e0e0e0; border-radius: 25px; cursor: pointer; transition: all 0.3s ease; font-size: 0.9rem; font-weight: 500; background: #f8f9fa; color: #666; }
-        .gift-type-checkbox:checked + .gift-type-label { background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); color: white; border-color: #0d9488; box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3); }
+        .gift-type-label { 
+            padding: 10px 18px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            font-size: 0.9rem; 
+            font-weight: 500; 
+            background: #f8f9fa; 
+            color: #666; 
+        }
+        .gift-type-checkbox:checked + .gift-type-label { 
+            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%); 
+            color: white; 
+            border-color: #0d9488; 
+            box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3); 
+        }
         .gift-type-label:hover { border-color: #0d9488; background: #f0fdfa; }
         .gift-type-checkbox:checked + .gift-type-label:hover { background: linear-gradient(135deg, #0f766e 0%, #0e7490 100%); }
-        .gift-type-tag { position: absolute; top: 12px; right: 12px; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
-        .gift-card { position: relative; }
-        .tag-formal { background: #1e40af; color: white; }
-        .tag-funky { background: #dc2626; color: white; }
-        .tag-romantic { background: #db2777; color: white; }
-        .tag-practical { background: #059669; color: white; }
-        .tag-traditional { background: #d97706; color: white; }
-        .tag-luxury { background: #7c3aed; color: white; }
+        
+        .gift-type-tag { position: absolute; top: 14px; right: 14px; padding: 5px 14px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tag-formal { background: linear-gradient(135deg, #1e40af, #1d4ed8); color: white; }
+        .tag-funky { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
+        .tag-romantic { background: linear-gradient(135deg, #db2777, #ec4899); color: white; }
+        .tag-practical { background: linear-gradient(135deg, #059669, #10b981); color: white; }
+        .tag-traditional { background: linear-gradient(135deg, #d97706, #f59e0b); color: white; }
+        .tag-luxury { background: linear-gradient(135deg, #7c3aed, #8b5cf6); color: white; }
+        
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 768px) { .header h1 { font-size: 2.2rem; } .main-card { padding: 25px; } .form-grid { grid-template-columns: 1fr; } .purchase-links { grid-template-columns: repeat(2, 1fr); } }
+        
+        @media (max-width: 768px) { 
+            .header h1 { font-size: 2.2rem; } 
+            .main-card { padding: 25px; } 
+            .form-grid { grid-template-columns: 1fr; } 
+            .purchase-links { flex-direction: column; }
+            .purchase-btn { width: 100%; }
+            .gifts-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -353,35 +559,36 @@ HTML_PAGE = '''<!DOCTYPE html>
                             <select id="relationship" required>
                                 <option value="">Select Relationship</option>
                                 <optgroup label="Immediate Family">
-                                    <option value="Mother">Mother</option>
-                                    <option value="Father">Father</option>
-                                    <option value="Brother">Brother</option>
-                                    <option value="Sister">Sister</option>
-                                    <option value="Wife">Wife</option>
-                                    <option value="Husband">Husband</option>
-                                    <option value="Son">Son</option>
-                                    <option value="Daughter">Daughter</option>
-                                    <option value="Grandparent">Grandparent</option>
-                                    <option value="Grandchild">Grandchild</option>
+                                    <option value="Mother" data-gender="Female">Mother</option>
+                                    <option value="Father" data-gender="Male">Father</option>
+                                    <option value="Brother" data-gender="Male">Brother</option>
+                                    <option value="Sister" data-gender="Female">Sister</option>
+                                    <option value="Wife" data-gender="Female">Wife</option>
+                                    <option value="Husband" data-gender="Male">Husband</option>
+                                    <option value="Son" data-gender="Male">Son</option>
+                                    <option value="Daughter" data-gender="Female">Daughter</option>
+                                    <option value="Grandparent" data-gender="">Grandparent</option>
+                                    <option value="Grandchild" data-gender="">Grandchild</option>
                                 </optgroup>
                                 <optgroup label="Extended Family">
-                                    <option value="Uncle">Uncle</option>
-                                    <option value="Aunt">Aunt</option>
-                                    <option value="Cousin">Cousin</option>
-                                    <option value="Nephew">Nephew</option>
-                                    <option value="Niece">Niece</option>
-                                    <option value="Saali">Saali (Sister-in-law)</option>
+                                    <option value="Uncle" data-gender="Male">Uncle</option>
+                                    <option value="Aunt" data-gender="Female">Aunt</option>
+                                    <option value="Cousin" data-gender="">Cousin</option>
+                                    <option value="Nephew" data-gender="Male">Nephew</option>
+                                    <option value="Niece" data-gender="Female">Niece</option>
+                                    <option value="Saali" data-gender="Female">Saali (Sister-in-law)</option>
                                 </optgroup>
                                 <optgroup label="Professional">
-                                    <option value="Boss">Boss</option>
-                                    <option value="Colleague">Colleague</option>
+                                    <option value="Boss" data-gender="">Boss</option>
+                                    <option value="Colleague" data-gender="">Colleague</option>
                                 </optgroup>
                                 <optgroup label="Social & Romantic">
-                                    <option value="Friend">Friend</option>
-                                    <option value="Boyfriend">Boyfriend</option>
-                                    <option value="Girlfriend">Girlfriend</option>
+                                    <option value="Friend" data-gender="">Friend</option>
+                                    <option value="Boyfriend" data-gender="Male">Boyfriend</option>
+                                    <option value="Girlfriend" data-gender="Female">Girlfriend</option>
                                 </optgroup>
                             </select>
+                            <div id="occasionHint" class="occasion-hint"></div>
                         </div>
                         <div class="form-group">
                             <label>🎉 Occasion</label>
@@ -410,13 +617,14 @@ HTML_PAGE = '''<!DOCTYPE html>
                                     <option value="House Warming">House Warming</option>
                                     <option value="Retirement">Retirement</option>
                                 </optgroup>
-                                <optgroup label="Other">
+                                <optgroup label="Special Days">
                                     <option value="New Year">New Year</option>
                                     <option value="Valentine's Day">Valentine's Day</option>
                                     <option value="Mother's Day">Mother's Day</option>
                                     <option value="Father's Day">Father's Day</option>
                                 </optgroup>
                             </select>
+                            <div id="relationshipHint" class="occasion-hint"></div>
                         </div>
                         <div class="form-group">
                             <label>🎂 Age Group</label>
@@ -428,10 +636,10 @@ HTML_PAGE = '''<!DOCTYPE html>
                                 <option value="Senior">Senior (60+)</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="genderGroup">
                             <label>👤 Gender</label>
                             <select id="gender">
-                                <option value="">Select Gender (Optional)</option>
+                                <option value="">Select Gender</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
                             </select>
@@ -482,8 +690,8 @@ HTML_PAGE = '''<!DOCTYPE html>
             </div>
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p style="color: #0d9488; font-size: 1.1rem;">🤖 AI is analyzing your preferences...</p>
-                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">Powered by Gemini AI - Finding personalized gifts</p>
+                <p style="color: #0d9488; font-size: 1.1rem;">🔮 Finding perfect gifts for you...</p>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">Analyzing preferences and cultural context</p>
             </div>
             <div class="results-section" id="results">
                 <div class="results-header">
@@ -506,6 +714,83 @@ HTML_PAGE = '''<!DOCTYPE html>
         </div>
     </div>
     <script>
+        // Relationship to Gender mapping (null = show gender picker)
+        const RELATIONSHIP_GENDER = {
+            'Mother': 'Female', 'Father': 'Male', 'Brother': 'Male', 'Sister': 'Female',
+            'Wife': 'Female', 'Husband': 'Male', 'Son': 'Male', 'Daughter': 'Female',
+            'Uncle': 'Male', 'Aunt': 'Female', 'Nephew': 'Male', 'Niece': 'Female',
+            'Boyfriend': 'Male', 'Girlfriend': 'Female', 'Saali': 'Female',
+            'Grandparent': null, 'Grandchild': null, 'Cousin': null,
+            'Boss': null, 'Colleague': null, 'Friend': null
+        };
+
+        // Occasion to suggested relationships mapping
+        const OCCASION_RELATIONSHIPS = {
+            'Raksha Bandhan': ['Brother', 'Sister'],
+            "Valentine's Day": ['Boyfriend', 'Girlfriend', 'Husband', 'Wife'],
+            "Mother's Day": ['Mother'],
+            "Father's Day": ['Father'],
+            'Karva Chauth': ['Husband', 'Wife'],
+            'Anniversary': ['Husband', 'Wife', 'Boyfriend', 'Girlfriend'],
+            'Baby Shower': ['Sister', 'Friend', 'Cousin', 'Daughter']
+        };
+
+        // Auto-set gender when relationship changes
+        document.getElementById('relationship').addEventListener('change', function() {
+            const genderSelect = document.getElementById('gender');
+            const genderGroup = document.getElementById('genderGroup');
+            const selectedOption = this.options[this.selectedIndex];
+            const fixedGender = selectedOption.getAttribute('data-gender');
+            
+            if (fixedGender) {
+                genderSelect.value = fixedGender;
+                genderGroup.classList.add('gender-auto-set');
+            } else {
+                genderSelect.value = '';
+                genderGroup.classList.remove('gender-auto-set');
+            }
+            
+            // Update occasion hint
+            updateOccasionHint();
+        });
+
+        // Show relationship suggestions when occasion changes
+        document.getElementById('occasion').addEventListener('change', function() {
+            const hintDiv = document.getElementById('relationshipHint');
+            const suggested = OCCASION_RELATIONSHIPS[this.value];
+            
+            if (suggested && suggested.length > 0) {
+                hintDiv.innerHTML = '💡 <strong>Suggested:</strong> ' + suggested.join(', ');
+                hintDiv.classList.add('visible');
+            } else {
+                hintDiv.classList.remove('visible');
+            }
+        });
+
+        function updateOccasionHint() {
+            const relationship = document.getElementById('relationship').value;
+            const hintDiv = document.getElementById('occasionHint');
+            
+            // Show occasion suggestions based on relationship
+            const suggestions = {
+                'Brother': ['Raksha Bandhan', 'Birthday'],
+                'Sister': ['Raksha Bandhan', 'Birthday'],
+                'Mother': ["Mother's Day", 'Birthday', 'Diwali'],
+                'Father': ["Father's Day", 'Birthday', 'Diwali'],
+                'Husband': ["Valentine's Day", 'Anniversary', 'Karva Chauth'],
+                'Wife': ["Valentine's Day", 'Anniversary', 'Karva Chauth'],
+                'Boyfriend': ["Valentine's Day", 'Birthday'],
+                'Girlfriend': ["Valentine's Day", 'Birthday']
+            };
+            
+            if (suggestions[relationship]) {
+                hintDiv.innerHTML = '💡 <strong>Popular occasions:</strong> ' + suggestions[relationship].join(', ');
+                hintDiv.classList.add('visible');
+            } else {
+                hintDiv.classList.remove('visible');
+            }
+        }
+
         function getSelectedGiftTypes() {
             const types = [];
             if (document.getElementById('type-formal').checked) types.push('Formal');
@@ -516,6 +801,7 @@ HTML_PAGE = '''<!DOCTYPE html>
             if (document.getElementById('type-luxury').checked) types.push('Luxury');
             return types.length > 0 ? types : ['Formal', 'Funky', 'Romantic', 'Practical', 'Traditional', 'Luxury'];
         }
+
         document.getElementById('giftForm').onsubmit = async (e) => {
             e.preventDefault();
             const data = {
@@ -546,6 +832,7 @@ HTML_PAGE = '''<!DOCTYPE html>
                 document.getElementById('error').style.display = 'block';
             }
         };
+
         function showResults(data) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('results').style.display = 'block';
@@ -553,6 +840,22 @@ HTML_PAGE = '''<!DOCTYPE html>
             document.getElementById('proTipText').textContent = data.pro_tip;
             document.getElementById('giftsGrid').innerHTML = data.recommendations.map(g => {
                 const tagClass = 'tag-' + (g.gift_type || 'practical').toLowerCase();
+                
+                // Build purchase links dynamically (only show available ones)
+                let linksHtml = '';
+                if (g.purchase_links.amazon) {
+                    linksHtml += '<a href="' + g.purchase_links.amazon + '" target="_blank" class="purchase-btn amazon-btn">Amazon</a>';
+                }
+                if (g.purchase_links.flipkart) {
+                    linksHtml += '<a href="' + g.purchase_links.flipkart + '" target="_blank" class="purchase-btn flipkart-btn">Flipkart</a>';
+                }
+                if (g.purchase_links.myntra) {
+                    linksHtml += '<a href="' + g.purchase_links.myntra + '" target="_blank" class="purchase-btn myntra-btn">Myntra</a>';
+                }
+                if (g.purchase_links.meesho) {
+                    linksHtml += '<a href="' + g.purchase_links.meesho + '" target="_blank" class="purchase-btn meesho-btn">Meesho</a>';
+                }
+                
                 return '<div class="gift-card">' +
                     '<span class="gift-type-tag ' + tagClass + '">' + (g.gift_type || 'Practical') + '</span>' +
                     '<div class="gift-header">' +
@@ -568,25 +871,23 @@ HTML_PAGE = '''<!DOCTYPE html>
                         '<div class="gift-why-text">' + g.why_applicable + '</div>' +
                     '</div>' +
                     '<div class="gift-price">' + g.approx_price_inr + '</div>' +
-                    '<div class="purchase-links">' +
-                        '<a href="' + g.purchase_links.amazon + '" target="_blank" class="purchase-btn amazon-btn">Amazon</a>' +
-                        '<a href="' + g.purchase_links.flipkart + '" target="_blank" class="purchase-btn flipkart-btn">Flipkart</a>' +
-                        '<a href="' + g.purchase_links.myntra + '" target="_blank" class="purchase-btn myntra-btn">Myntra</a>' +
-                        '<a href="' + g.purchase_links.shoppersstop + '" target="_blank" class="purchase-btn shoppersstop-btn">Shoppers Stop</a>' +
-                        '<a href="' + g.purchase_links.blinkit + '" target="_blank" class="purchase-btn blinkit-btn">Blinkit</a>' +
-                        '<a href="' + g.purchase_links.meesho + '" target="_blank" class="purchase-btn meesho-btn">Meesho</a>' +
-                    '</div>' +
+                    '<div class="purchase-links">' + linksHtml + '</div>' +
                 '</div>';
             }).join('');
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
+
         function reset() {
             document.getElementById('giftForm').reset();
             document.querySelectorAll('.gift-type-checkbox').forEach(cb => cb.checked = true);
             document.getElementById('results').style.display = 'none';
             document.getElementById('formSection').style.display = 'block';
+            document.getElementById('genderGroup').classList.remove('gender-auto-set');
+            document.getElementById('occasionHint').classList.remove('visible');
+            document.getElementById('relationshipHint').classList.remove('visible');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+
         function editRequest() {
             document.getElementById('results').style.display = 'none';
             document.getElementById('formSection').style.display = 'block';
