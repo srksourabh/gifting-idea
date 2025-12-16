@@ -1136,9 +1136,9 @@ HTML_PAGE = '''<!DOCTYPE html>
                 { value: 'Retirement', label: '🌅 Retirement' }
             ],
             special: [
-                { value: "Valentine's Day", label: '💕 Valentine\'s Day' },
-                { value: "Mother's Day", label: '👩 Mother\'s Day' },
-                { value: "Father's Day", label: '👨 Father\'s Day' },
+                { value: "Valentine's Day", label: '💕 Valentine\\'s Day' },
+                { value: "Mother's Day", label: '👩 Mother\\'s Day' },
+                { value: "Father's Day", label: '👨 Father\\'s Day' },
                 { value: 'New Year', label: '🎆 New Year' }
             ],
             religious: [
