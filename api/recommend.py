@@ -4,12 +4,117 @@ import random
 import os
 import urllib.request
 import urllib.error
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlparse
 
 
 # Gemini API Configuration
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+
+
+# Affiliate program IDs (set in Vercel env). Any unset key -> raw URL.
+# - Amazon Associates India: e.g. "yourname-21"
+# - Cuelinks (aggregator: Flipkart, Myntra, Croma, Ajio, ShoppersStop, Meesho)
+AMAZON_AFFILIATE_TAG = os.environ.get('AMAZON_AFFILIATE_TAG', '')
+CUELINKS_CID         = os.environ.get('CUELINKS_CID', '')
+
+# Merchants that have no public affiliate program -> always pass-through.
+_NO_AFFILIATE_MERCHANTS = {'blinkit', 'zepto', 'instamart', 'swiggy'}
+
+# Server-side input caps -- protect against prompt-injection-via-bloat
+# and runaway token spend. Match or exceed the client-side maxlength.
+_LIMITS = {
+    'relationship': 50,
+    'occasion':     50,
+    'age_group':    50,
+    'vibe':         50,
+    'gender':       30,
+    'notes':        300,
+    'city':         50,
+}
+
+
+def _add_amazon_tag(url: str) -> str:
+    """Append Associates tag only to genuine amazon.in URLs."""
+    if not AMAZON_AFFILIATE_TAG or not isinstance(url, str):
+        return url
+    try:
+        host = urlparse(url).netloc.lower()
+    except (ValueError, AttributeError):
+        return url
+    # Match amazon.in and its subdomains; reject lookalikes (myamazonshop.in, amazonaws.com)
+    if host != 'amazon.in' and not host.endswith('.amazon.in'):
+        return url
+    sep = '&' if '?' in url else '?'
+    return f"{url}{sep}tag={quote_plus(AMAZON_AFFILIATE_TAG)}"
+
+
+def _wrap_cuelinks(url: str) -> str:
+    """Wrap a merchant URL through the Cuelinks aggregator redirect."""
+    if not CUELINKS_CID or not isinstance(url, str):
+        return url
+    return (
+        "https://linksredirect.com/?cid="
+        f"{quote_plus(CUELINKS_CID)}&source=linkkit&url={quote_plus(url)}"
+    )
+
+
+def add_affiliate_tags(links: dict) -> dict:
+    """Apply affiliate wrapping to outbound links where we have programs.
+
+    Order of preference:
+    - Amazon  -> direct tag append (preserves recognizable URL).
+    - Other supported merchants -> Cuelinks if configured.
+    - Quick commerce -> untouched (no affiliate programs exist).
+    """
+    if not links:
+        return links
+
+    out: dict = {}
+    for merchant, url in links.items():
+        if not url or not isinstance(url, str):
+            out[merchant] = url
+            continue
+        merchant_key = merchant.lower()
+        if merchant_key in _NO_AFFILIATE_MERCHANTS:
+            out[merchant] = url
+        elif merchant_key == 'amazon':
+            out[merchant] = _add_amazon_tag(url)
+        elif CUELINKS_CID:
+            out[merchant] = _wrap_cuelinks(url)
+        else:
+            out[merchant] = url
+    return out
+
+
+def _sanitize_inputs(data: dict) -> dict:
+    """Coerce + truncate user-submitted fields before they hit the prompt.
+
+    Defends against prompt injection via bloat and runaway Gemini token spend.
+    """
+    out = {}
+    for key, cap in _LIMITS.items():
+        val = data.get(key, '')
+        if not isinstance(val, str):
+            val = str(val) if val is not None else ''
+        out[key] = val.strip()[:cap]
+
+    # Budget: must be a positive int within sane bounds
+    raw_budget = data.get('budget', 2000)
+    try:
+        b = int(raw_budget)
+    except (TypeError, ValueError):
+        b = 2000
+    out['budget'] = max(100, min(b, 10_000_000))
+
+    # gift_types: list[str] of known tags only
+    valid_tags = {"Formal", "Funky", "Romantic", "Practical", "Traditional", "Luxury"}
+    raw_types = data.get('gift_types')
+    if isinstance(raw_types, list):
+        out['gift_types'] = [t for t in raw_types if isinstance(t, str) and t in valid_tags] or None
+    else:
+        out['gift_types'] = None
+    return out
 
 
 def call_gemini(prompt, max_tokens=2048):
@@ -43,11 +148,12 @@ def call_gemini(prompt, max_tokens=2048):
     return None
 
 
-def get_ai_recommendations(relationship, occasion, age_group, vibe, budget, gender, notes, gift_types):
+def get_ai_recommendations(relationship, occasion, age_group, vibe, budget, gender, notes, gift_types, city=""):
     """LLM-1: Generate gift recommendations using Gemini."""
 
     gender_text = f", gender: {gender}" if gender else ""
     notes_text = f"\nSpecial notes from user: {notes}" if notes else ""
+    city_text = f"\nBuyer's city: {city} (suggest same-day delivery options from Blinkit/Zepto where relevant)" if city else ""
 
     # Build preference hints from gift_types but don't restrict
     style_hints = ""
@@ -61,7 +167,7 @@ Context:
 - Occasion: {occasion}
 - Age Group: {age_group}{gender_text}
 - Style/Vibe they like: {vibe}
-- Budget: Rs.{budget:,} INR{notes_text}{style_hints}
+- Budget: Rs.{budget:,} INR{notes_text}{city_text}{style_hints}
 
 Generate exactly 10 UNIQUE and CREATIVE gift recommendations. Think about:
 - What's trending right now in India for this occasion
@@ -362,21 +468,21 @@ def get_fallback_recommendations(relationship, occasion, age_group, vibe, budget
                 "description": descriptions[len(recommendations) % len(descriptions)],
                 "why_applicable": why_applicable,
                 "approx_price_inr": f"Rs.{price:,}",
-                "purchase_links": {
+                "purchase_links": add_affiliate_tags({
                     "amazon": f"https://www.amazon.in/s?k={encoded_item}",
                     "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
                     "myntra": f"https://www.myntra.com/{encoded_item}",
                     "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
                     "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
                     "meesho": f"https://www.meesho.com/search?q={encoded_item}"
-                }
+                })
             })
         attempt += 1
 
     return recommendations
 
 
-def get_recommendations(relationship, occasion, age_group, vibe, budget, gender="", notes="", gift_types=None):
+def get_recommendations(relationship, occasion, age_group, vibe, budget, gender="", notes="", gift_types=None, city=""):
     """Main function that uses dual-LLM approach with fallback."""
     if gift_types is None:
         gift_types = ["Formal", "Funky", "Romantic", "Practical", "Traditional", "Luxury"]
@@ -390,7 +496,7 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
     # Try AI-powered recommendations if API key is available
     if GEMINI_API_KEY:
         # LLM-1: Generate gift ideas
-        ai_gifts = get_ai_recommendations(relationship, occasion, age_group, vibe, budget, gender, notes, gift_types)
+        ai_gifts = get_ai_recommendations(relationship, occasion, age_group, vibe, budget, gender, notes, gift_types, city)
 
         if ai_gifts:
             # LLM-2: Add personalized reasoning
@@ -413,14 +519,14 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
                     "description": gift.get('description', f"Perfect gift for {relationship}"),
                     "why_applicable": why_applicable,
                     "approx_price_inr": f"Rs.{gift.get('price', budget):,}",
-                    "purchase_links": {
+                    "purchase_links": add_affiliate_tags({
                         "amazon": f"https://www.amazon.in/s?k={encoded_item}",
                         "flipkart": f"https://www.flipkart.com/search?q={encoded_item}",
                         "myntra": f"https://www.myntra.com/{encoded_item}",
                         "shoppersstop": f"https://www.shoppersstop.com/search?q={encoded_item}",
                         "blinkit": f"https://blinkit.com/s/?q={encoded_item}",
                         "meesho": f"https://www.meesho.com/search?q={encoded_item}"
-                    }
+                    })
                 })
             ai_powered = True
 
@@ -445,32 +551,65 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
     }
 
 
+_MAX_REQUEST_BYTES = 8 * 1024  # 8KB is more than enough for our payload
+
+
 class handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length)
-        data = json.loads(body)
-
-        result = get_recommendations(
-            data.get('relationship', 'Friend'),
-            data.get('occasion', 'Birthday'),
-            data.get('age_group', 'Adult'),
-            data.get('vibe', 'Traditional'),
-            data.get('budget', 2000),
-            data.get('gender', ''),
-            data.get('notes', ''),
-            data.get('gift_types', None)
-        )
-
-        self.send_response(200)
+    def _send_json(self, status: int, payload: dict) -> None:
+        body = json.dumps(payload).encode('utf-8')
+        self.send_response(status)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        self.wfile.write(json.dumps(result).encode())
+        self.wfile.write(body)
+
+    def do_POST(self):
+        try:
+            content_length = int(self.headers.get('Content-Length', 0) or 0)
+        except (TypeError, ValueError):
+            self._send_json(400, {"error": "invalid content-length"})
+            return
+
+        if content_length <= 0 or content_length > _MAX_REQUEST_BYTES:
+            self._send_json(413, {"error": "request too large"})
+            return
+
+        try:
+            body = self.rfile.read(content_length)
+            data = json.loads(body)
+            if not isinstance(data, dict):
+                raise ValueError("body is not an object")
+        except (json.JSONDecodeError, ValueError, UnicodeDecodeError):
+            self._send_json(400, {"error": "invalid request body"})
+            return
+
+        clean = _sanitize_inputs(data)
+
+        try:
+            result = get_recommendations(
+                clean['relationship'] or 'Friend',
+                clean['occasion'] or 'Birthday',
+                clean['age_group'] or 'Adult',
+                clean['vibe'] or 'Traditional',
+                clean['budget'],
+                clean['gender'],
+                clean['notes'],
+                clean['gift_types'],
+                clean.get('city', ''),
+            )
+        except Exception as exc:
+            # Last-resort guard. Log to Vercel function logs but don't leak details.
+            print(f"recommend error: {type(exc).__name__}: {exc}")
+            self._send_json(500, {"error": "internal error"})
+            return
+
+        self._send_json(200, result)
 
     def do_OPTIONS(self):
-        self.send_response(200)
+        self.send_response(204)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Max-Age', '86400')
         self.end_headers()
