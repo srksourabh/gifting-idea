@@ -552,14 +552,24 @@ def get_recommendations(relationship, occasion, age_group, vibe, budget, gender=
 
 
 _MAX_REQUEST_BYTES = 8 * 1024  # 8KB is more than enough for our payload
+_PRODUCTION_ORIGIN = 'https://gifting-idea.vercel.app'
 
 
 class handler(BaseHTTPRequestHandler):
+    def _cors_origin(self) -> 'str | None':
+        origin = self.headers.get('Origin', '')
+        if origin == _PRODUCTION_ORIGIN or origin.endswith('.vercel.app'):
+            return origin
+        return None
+
     def _send_json(self, status: int, payload: dict) -> None:
         body = json.dumps(payload).encode('utf-8')
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
+        cors = self._cors_origin()
+        if cors:
+            self.send_header('Access-Control-Allow-Origin', cors)
+            self.send_header('Vary', 'Origin')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -571,7 +581,10 @@ class handler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": "invalid content-length"})
             return
 
-        if content_length <= 0 or content_length > _MAX_REQUEST_BYTES:
+        if content_length <= 0:
+            self._send_json(400, {"error": "request body is required"})
+            return
+        if content_length > _MAX_REQUEST_BYTES:
             self._send_json(413, {"error": "request too large"})
             return
 
@@ -608,8 +621,11 @@ class handler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.send_header('Access-Control-Max-Age', '86400')
+        cors = self._cors_origin()
+        if cors:
+            self.send_header('Access-Control-Allow-Origin', cors)
+            self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+            self.send_header('Access-Control-Max-Age', '86400')
+            self.send_header('Vary', 'Origin')
         self.end_headers()
