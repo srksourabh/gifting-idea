@@ -198,7 +198,8 @@ For each gift, provide in this EXACT JSON format (no markdown, just pure JSON ar
 
 Requirements:
 - All gifts must be easily purchasable in India
-- Prices should be realistic and within budget range (60%-120% of budget)
+- STRICT BUDGET RULE: Every gift price MUST be less than or equal to Rs.{budget:,}. DO NOT suggest anything above this amount.
+- Aim for prices between 50%-100% of budget so there is room for taxes/delivery
 - Make each suggestion UNIQUE - no two gifts should be from the same category
 - Be specific with product names/types, not generic
 
@@ -219,6 +220,12 @@ Return ONLY the JSON array, no other text."""
 
             gifts = json.loads(cleaned)
             if isinstance(gifts, list) and len(gifts) > 0:
+                for g in gifts:
+                    try:
+                        p = int(float(g.get('price', budget)))
+                    except (TypeError, ValueError):
+                        p = budget
+                    g['price'] = min(p if p > 0 else budget, budget)
                 return gifts
         except json.JSONDecodeError as e:
             print(f"JSON parse error: {e}")
@@ -425,7 +432,7 @@ def get_fallback_recommendations(relationship, occasion, age_group, vibe, budget
             random.seed(hash(f"{relationship}{occasion}{vibe}{gender}{attempt}"))
             item = random.choice(items)
             used.add(item)
-            price = round(budget * random.uniform(0.7, 1.1) / 50) * 50
+            price = (int(budget * random.uniform(0.6, 1.0)) // 50) * 50
 
             descriptions = [
                 f"Perfect for {relationship} on {occasion}, combines thoughtfulness with utility",
