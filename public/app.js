@@ -436,7 +436,7 @@
     return `
       <article class="product-card" style="animation-delay:${animDelay}">
         <div class="card-top">
-          <div class="card-icon-wrap" aria-hidden="true">${glyph}</div>
+          <div class="card-icon-wrap" aria-hidden="true">${escapeHtml(glyph)}</div>
           <div class="card-body">
             <span class="card-type-tag">${escapeHtml(giftType)}</span>
             <h3 class="card-title">${escapeHtml(title)}</h3>
